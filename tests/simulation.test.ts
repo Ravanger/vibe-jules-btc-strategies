@@ -5,7 +5,7 @@ describe("Simulation", () => {
         const data = await fetchBitcoinData();
         expect(Array.isArray(data)).toBe(true);
         if (data.length > 0) {
-            expect(data[0]).toHaveProperty("time");
+            expect(data[0]).toHaveProperty("timestamp");
             expect(data[0]).toHaveProperty("price");
         }
     });
