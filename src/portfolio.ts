@@ -6,6 +6,8 @@ export interface Trade {
     price: number;
     amount: number;
     value: number;
+    postCash: number;
+    postAsset: number;
     reason?: string;
 }
 
@@ -24,13 +26,14 @@ export class Portfolio {
         this.goal = goal;
         this.ledger = [];
 
-        this.initialValueUSD = initialBalance;
         if (goal === "ACCUMULATE") {
-            this.asset = initialBalance / startPrice;
+            this.asset = initialBalance;
             this.cash = 0;
+            this.initialValueUSD = initialBalance * startPrice;
         } else {
             this.cash = initialBalance;
             this.asset = 0;
+            this.initialValueUSD = initialBalance;
         }
     }
 
@@ -43,22 +46,25 @@ export class Portfolio {
             if (this.asset < 0) this.coverShort(price, signal.date, "Auto-covering for buy");
             if (this.cash > 0) {
                 const amountToBuy = this.cash / price;
-                this.ledger.push({ date: signal.date, action: "BUY", price, amount: amountToBuy, value: this.cash, reason });
-                this.asset += amountToBuy; this.cash = 0;
+                this.asset += amountToBuy;
+                this.cash = 0;
+                this.ledger.push({ date: signal.date, action: "BUY", price, amount: amountToBuy, value: amountToBuy * price, postCash: this.cash, postAsset: this.asset, reason });
             }
         } else if (action === "SELL") {
             if (this.asset > 0) {
                 const tradeValue = this.asset * price;
-                this.ledger.push({ date: signal.date, action: "SELL", price, amount: this.asset, value: tradeValue, reason });
-                this.cash += tradeValue; this.asset = 0;
+                this.cash += tradeValue;
+                const soldAsset = this.asset;
+                this.asset = 0;
+                this.ledger.push({ date: signal.date, action: "SELL", price, amount: soldAsset, value: tradeValue, postCash: this.cash, postAsset: this.asset, reason });
             }
         } else if (action === "SHORT") {
             if (this.asset > 0) this.executeTrade({ ...signal, action: "SELL", reason: "Closing long before shorting" });
             if (this.asset === 0 && this.cash > 0) {
                 const amountToShort = this.cash / price;
-                this.ledger.push({ date: signal.date, action: "SHORT", price, amount: amountToShort, value: this.cash, reason });
                 this.cash += this.cash; // Collateralized
                 this.asset -= amountToShort;
+                this.ledger.push({ date: signal.date, action: "SHORT", price, amount: amountToShort, value: amountToShort * price, postCash: this.cash, postAsset: this.asset, reason });
             }
         } else if (action === "COVER") {
             this.coverShort(price, signal.date, reason);
@@ -69,9 +75,9 @@ export class Portfolio {
         if (this.asset < 0) {
             const amountToCover = Math.abs(this.asset);
             const costToCover = amountToCover * price;
-            this.ledger.push({ date, action: "COVER", price: price, amount: amountToCover, value: costToCover, reason });
             this.cash -= costToCover;
             this.asset = 0;
+            this.ledger.push({ date, action: "COVER", price: price, amount: amountToCover, value: costToCover, postCash: this.cash, postAsset: this.asset, reason });
         }
     }
 
@@ -97,7 +103,7 @@ export class Portfolio {
     printLedger() {
         console.log("\n--- Trading Ledger ---");
         this.ledger.forEach(t => {
-            console.log(`Date ${t.date}: ${t.action.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2)} | Reason: ${t.reason}`);
+            console.log(`Date ${t.date}: ${t.action.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2).padEnd(10)} | Bal($): $${t.postCash.toFixed(2).padEnd(10)} | Stack: ${t.postAsset.toFixed(4)} | Reason: ${t.reason}`);
         });
     }
 }
