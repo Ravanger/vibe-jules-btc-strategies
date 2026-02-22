@@ -28,8 +28,48 @@ describe("Trading Logic", () => {
             ...Array(30).fill(200), // MA30 will be 200
             ...Array(10).fill(100)  // Price drops to 100
         ];
-        const signals = getTradingSignals(prices);
+        const signals = getTradingSignals(prices, "golden_cross");
         const sellSignals = signals.filter(s => s.action === "SELL");
         expect(sellSignals.length).toBeGreaterThan(0);
+    });
+
+    test("should detect RSI signals", () => {
+        const prices = [
+            ...Array(30).fill(100),
+            ...Array(10).fill(20), // Deep oversold
+            ...Array(10).fill(100)
+        ];
+        const signals = getTradingSignals(prices, "rsi");
+        expect(signals.some(s => s.action === "BUY" || s.action === "SELL")).toBeTruthy();
+    });
+
+    test("should detect MACD signals", () => {
+        const prices = Array.from({ length: 100 }, (_, i) => 100 + Math.sin(i / 5) * 20);
+        const signals = getTradingSignals(prices, "macd");
+        expect(signals.some(s => s.action === "BUY" || s.action === "SELL")).toBeTruthy();
+    });
+
+    test("should detect Bollinger Bands signals", () => {
+        const prices = [
+            ...Array(30).fill(100),
+            50, // Below lower band
+            100,
+            150 // Above upper band
+        ];
+        const signals = getTradingSignals(prices, "bollinger");
+        expect(signals.some(s => s.action === "BUY")).toBeTruthy();
+        expect(signals.some(s => s.action === "SELL")).toBeTruthy();
+    });
+
+    test("should detect Mean Reversion signals", () => {
+        const prices = [
+            ...Array(30).fill(100),
+            80, // Way below MA20
+            100,
+            120 // Way above MA20
+        ];
+        const signals = getTradingSignals(prices, "mean_reversion");
+        expect(signals.some(s => s.action === "BUY")).toBeTruthy();
+        expect(signals.some(s => s.action === "SELL")).toBeTruthy();
     });
 });
