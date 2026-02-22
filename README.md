@@ -29,6 +29,14 @@ A professional-grade, portable cryptocurrency trading simulator with real-world 
 ### 📜 Trading Ledger
 - **Detailed Logs**: Every trade is logged with date, price, amount, value, **Rolling Balance**, **Rolling Crypto Stack**, and a **Reason** explaining the strategy signal.
 
+### 🎮 Easter Egg
+- **Flappy Bird Game**: Click the copyright symbol in the footer to reveal an interactive game!
+- **Powerups**:
+    - 🐌 **Snail**: Slows down the speed of incoming pipes.
+    - 👻 **Ghost**: Grants invincibility for a limited time.
+    - 🪴 **Growth**: Widens the gap between pipes.
+    - 🐤 **Mini**: Shrinks the bird for easier navigation.
+
 ## 🛠️ Setup & Usage
 
 ### Web Version (Recommended)
