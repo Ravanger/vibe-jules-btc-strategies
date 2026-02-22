@@ -36,6 +36,8 @@ describe("Trading Logic", () => {
         const signals = getTradingSignals(prices, "mean_reversion");
         expect(signals.length).toBe(60);
         expect(signals[0]).toHaveProperty("ma20");
+    });
+
     test("should detect a Death Cross (SELL)", () => {
         // Create a scenario where MA7 crosses below MA30
         const prices = [

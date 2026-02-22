@@ -169,7 +169,7 @@
             <table id="ledger-table">
                 <thead>
                     <tr>
-                        <th>Day</th>
+                        <th>Date</th>
                         <th>Type</th>
                         <th>Price ($)</th>
                         <th>Amount (BTC)</th>
@@ -277,29 +277,6 @@
             }
             return ema;
         }
-
-        function calculateRSI(prices, period = 14) {
-            const rsi = new Array(prices.length).fill(NaN);
-            if (prices.length <= period) return rsi;
-            let gains = 0; let losses = 0;
-            for (let i = 1; i <= period; i++) {
-                const diff = prices[i] - prices[i - 1];
-                if (diff >= 0) gains += diff; else losses -= diff;
-            }
-            let avgGain = gains / period; let avgLoss = losses / period;
-            rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
-            for (let i = period + 1; i < prices.length; i++) {
-                const diff = prices[i] - prices[i - 1];
-                let currentGain = diff >= 0 ? diff : 0;
-                let currentLoss = diff < 0 ? -diff : 0;
-                avgGain = (avgGain * (period - 1) + currentGain) / period;
-                avgLoss = (avgLoss * (period - 1) + currentLoss) / period;
-                const rs = avgGain / avgLoss;
-                rsi[i] = 100 - (100 / (1 + rs));
-            }
-            return rsi;
-        }
-
 
         function calculateRSI(prices, period = 14) {
             const rsi = new Array(prices.length).fill(NaN);
@@ -571,15 +548,19 @@
         }
 
         async function runSimulation() {
+            console.log("runSimulation started");
             const strategy = document.getElementById('strategy-select').value;
             const daysToSimulate = parseInt(document.getElementById('period-input').value) || 60;
             const initialBalance = parseFloat(document.getElementById('balance-input').value) || 100000;
 
+            console.log("Fetching Bitcoin data...");
             const fullPrices = await fetchBitcoinData();
             if (!fullPrices) {
+                console.error("Failed to fetch Bitcoin data.");
                 alert("Failed to fetch Bitcoin data. Please try again later.");
                 return;
             }
+            console.log(`Fetched ${fullPrices.length} data points.`);
 
             const sliceStart = Math.max(0, fullPrices.length - daysToSimulate - 40);
             const pricesData = fullPrices.slice(sliceStart);
@@ -665,7 +646,6 @@
         const statusText = document.getElementById('game-status');
 
         let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.3, lift: -6, velocity: 0 };
-        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.4, lift: -8, velocity: 0 };
         let pipes = [];
         let frame = 0;
         let score = 0;
@@ -718,7 +698,6 @@
             for (let i = pipes.length - 1; i >= 0; i--) {
                 const pipe = pipes[i];
                 pipe.x -= 1.5;
-                pipe.x -= 2;
 
                 // Collision
                 if (bird.x + bird.width > pipe.x && bird.x < pipe.x + 50) {
