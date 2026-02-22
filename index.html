@@ -150,7 +150,7 @@
             </div>
             <div class="control-group">
                 <label for="period-input">Period (Days):</label>
-                <input type="number" id="period-input" value="60" min="10" max="365">
+                <input type="number" id="period-input" value="60" min="10" max="500">
             </div>
             <div class="control-group">
                 <label for="balance-input" id="balance-label">Initial Balance ($):</label>
@@ -218,24 +218,30 @@
             </table>
         </div>
 
-        <button class="btn btn-secret" onclick="toggleGame()">Play Flappy Bird (Easter Egg)</button>
-        <div id="game-container">
-            <h2>Flappy Bird</h2>
-            <p>Press SPACE or Click to Jump.</p>
-            <canvas id="flappyCanvas" width="400" height="500"></canvas>
-        </div>
-
         <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--table-border); text-align: center; font-size: 0.8em; color: #777;">
-            <p>Data provided by <a href="https://www.coingecko.com/" target="_blank" style="color: var(--accent-color);">CoinGecko</a>.
+            <p>Data provided by <a href="https://api.coincap.io/" target="_blank" style="color: var(--accent-color);">CoinCap</a>.
                Built with <a href="https://js.danfo.js.org/" target="_blank" style="color: var(--accent-color);">Danfo.js</a> & <a href="https://www.chartjs.org/" target="_blank" style="color: var(--accent-color);">Chart.js</a>.</p>
             <p>Created by <a href="https://jules.google/" target="_blank" style="color: var(--accent-color);">Google Jules</a>. | <span id="last-refreshed">Last Refreshed: Never</span></p>
-            <p>&copy; 2026 Crypto Trading Strategies Simulation</p>
+            <p><span onclick="toggleGame()" style="cursor: pointer;" title="Easter Egg">&copy;</span> 2026 Crypto Trading Strategies Simulation</p>
+
+            <div id="game-container" style="margin-top: 20px;">
+                <h2 style="font-size: 1.2em;">Flappy Bird</h2>
+                <p>Press SPACE or Click to Jump.</p>
+                <canvas id="flappyCanvas" width="400" height="500"></canvas>
+            </div>
         </footer>
     </div>
 
     <script>
         async function fetchCryptoData(coinId) {
-            const cacheKey = `crypto_data_cache_${coinId}`;
+            // Map CoinGecko IDs to CoinCap IDs
+            const idMap = {
+                'bitcoin': 'bitcoin', 'ethereum': 'ethereum', 'binancecoin': 'binance-coin',
+                'solana': 'solana', 'ripple': 'xrp', 'dogecoin': 'dogecoin',
+                'cardano': 'cardano', 'avalanche-2': 'avalanche', 'tron': 'tron', 'polkadot': 'polkadot'
+            };
+            const mappedId = idMap[coinId] || coinId;
+            const cacheKey = `crypto_data_cache_${mappedId}`;
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
@@ -245,14 +251,18 @@
                 }
             }
             try {
-                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=500&interval=daily`);
-                const data = await res.json();
-                const prices = data.prices.map(p => ({ timestamp: p[0], price: p[1] }));
+                // Use CoinCap API for better reliability and avoiding 401s
+                const res = await fetch(`https://api.coincap.io/v2/assets/${mappedId}/history?interval=d1`);
+                const json = await res.json();
+                const prices = json.data.map(p => ({ timestamp: p.time, price: parseFloat(p.priceUsd) }));
                 const now = Date.now();
                 localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, data: prices }));
                 document.getElementById('last-refreshed').innerText = `Last Refreshed: ${new Date(now).toLocaleString()}`;
                 return prices;
-            } catch (e) { return null; }
+            } catch (e) {
+                console.error("Fetch failed", e);
+                return null;
+            }
         }
 
         function rollingMean(v, w) {
@@ -621,10 +631,9 @@
             document.getElementById('mode-indicator').innerText = `Active Mode: ${isAccumulate ? 'Stacking Assets (Starting with Crypto)' : 'Maximizing USD Profit (Starting with Cash)'}`;
 
             document.getElementById('performance-summary').innerHTML = `
-                <div class="stat-card" style="${!isAccumulate ? 'border-top: 4px solid #27ae60;' : ''}"><h3>Initial Value</h3><p>$${port.initVal.toLocaleString()}<br><small>(${(port.initVal/simToRun[0].price).toFixed(4)} ${coinName})</small></p></div>
-                <div class="stat-card" style="${!isAccumulate ? 'border-top: 4px solid #27ae60;' : ''}"><h3>Final Value</h3><p>$${finalVal.toLocaleString()}<br><small>(${(finalVal/finalPrice).toFixed(4)} ${coinName})</small></p></div>
-                <div class="stat-card" style="${!isAccumulate ? 'border-top: 4px solid #27ae60;' : ''}"><h3>Profit/Loss</h3><p style="color:${profit>=0?'#27ae60':'#e74c3c'}">$${profit.toLocaleString()} (${((profit/port.initVal)*100).toFixed(2)}%)<br><small>(${(profit/finalPrice).toFixed(4)} ${coinName})</small></p></div>
-                <div class="stat-card" style="${isAccumulate ? 'border-top: 4px solid #3498db;' : ''}"><h3>Final Stack ${isAccumulate ? '🏆' : ''}</h3><p>${(finalVal/finalPrice).toFixed(4)} ${coinName}<br><small>($${finalVal.toLocaleString()})</small></p></div>
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Initial Value</h3><p>$${port.initVal.toLocaleString()}<br><small>(${(port.initVal/simToRun[0].price).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Final Portfolio</h3><p>$${finalVal.toLocaleString()}<br><small>(${(finalVal/finalPrice).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Profit/Loss</h3><p style="color:${profit>=0?'#27ae60':'#e74c3c'}">$${profit.toLocaleString()} (${((profit/port.initVal)*100).toFixed(2)}%)<br><small>(${(profit/finalPrice).toFixed(4)} ${coinName})</small></p></div>
             `;
             document.querySelector('#ledger-table tbody').innerHTML = port.ledger.map(t => `
                 <tr>
@@ -643,12 +652,17 @@
 
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
+            const getMarkerData = (action) => simToRun.map(s => {
+                const trade = port.ledger.find(t => t.date === s.date && t.action === action);
+                return trade ? s.price : null;
+            });
+
             const datasets = [
                 { label: 'Price', data: simToRun.map(s => s.price), borderColor: isDark ? '#5dade2' : '#3498db', pointRadius: 0, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.1)', order: 2, yAxisID: 'y' },
-                { label: 'BUY', data: simToRun.map(s => s.action === 'BUY' ? s.price : null), pointStyle: 'triangle', pointRadius: 8, showLine: false, backgroundColor: '#27ae60', order: 1, yAxisID: 'y' },
-                { label: 'SELL', data: simToRun.map(s => s.action === 'SELL' ? s.price : null), pointStyle: 'rectRot', pointRadius: 8, showLine: false, backgroundColor: '#e74c3c', order: 1, yAxisID: 'y' },
-                { label: 'SHORT', data: simToRun.map(s => s.action === 'SHORT' ? s.price : null), pointStyle: 'triangle', rotation: 180, pointRadius: 8, showLine: false, backgroundColor: '#e67e22', order: 1, yAxisID: 'y' },
-                { label: 'COVER', data: simToRun.map(s => s.action === 'COVER' ? s.price : null), pointStyle: 'circle', pointRadius: 8, showLine: false, backgroundColor: '#9b59b6', order: 1, yAxisID: 'y' }
+                { label: 'BUY', data: getMarkerData('BUY'), pointStyle: 'triangle', pointRadius: 8, showLine: false, backgroundColor: '#27ae60', order: 1, yAxisID: 'y' },
+                { label: 'SELL', data: getMarkerData('SELL'), pointStyle: 'rectRot', pointRadius: 8, showLine: false, backgroundColor: '#e74c3c', order: 1, yAxisID: 'y' },
+                { label: 'SHORT', data: getMarkerData('SHORT'), pointStyle: 'triangle', rotation: 180, pointRadius: 8, showLine: false, backgroundColor: '#e67e22', order: 1, yAxisID: 'y' },
+                { label: 'COVER', data: getMarkerData('COVER'), pointStyle: 'circle', pointRadius: 8, showLine: false, backgroundColor: '#9b59b6', order: 1, yAxisID: 'y' }
             ];
 
             const addIndicator = (label, dataKey, color, dashed = true, yAxis = 'y') => {
@@ -668,6 +682,9 @@
             else if (strat === 'mean_reversion' || strat === 'short_mean_reversion') { addIndicator('20-Day MA', 'ma20', '#f39c12'); }
             else if (strat === 'rsi' || strat === 'short_rsi') { addIndicator('RSI', 'rsi', '#e74c3c', false, 'y1'); }
             else if (strat === 'macd' || strat === 'short_macd') { addIndicator('MACD', 'macd', '#2ecc71', false, 'y1'); addIndicator('Signal', 'signal', '#e74c3c', true, 'y1'); }
+            else if (strat === 'stochastic') { addIndicator('%K', 'stochK', '#2ecc71', false, 'y1'); addIndicator('%D', 'stochD', '#e74c3c', true, 'y1'); }
+            else if (strat === 'williams_r') { addIndicator('Williams %R', 'williamsR', '#e74c3c', false, 'y1'); }
+            else if (strat === 'cci') { addIndicator('CCI', 'cci', '#2ecc71', false, 'y1'); }
             else if (strat === 'psar') { addIndicator('SAR', 'sar', '#e74c3c', false); }
             else if (strat === 'donchian') { addIndicator('High (20d)', 'up', '#e67e22'); addIndicator('Low (20d)', 'lo', '#e67e22'); }
 
@@ -689,7 +706,7 @@
                             title: { display: true, text: 'Price ($)', color: isDark ? '#f4f4f4' : '#333' }
                         },
                         y1: {
-                            type: 'linear', display: (strat.includes('rsi') || strat.includes('macd')), position: 'right',
+                            type: 'linear', display: (strat.includes('rsi') || strat.includes('macd') || ['stochastic', 'williams_r', 'cci'].includes(strat)), position: 'right',
                             grid: { drawOnChartArea: false },
                             ticks: { color: isDark ? '#f4f4f4' : '#333' },
                             title: { display: true, text: 'Indicator', color: isDark ? '#f4f4f4' : '#333' }
@@ -704,11 +721,11 @@
         }
 
         ['crypto-select', 'strategy-select', 'mode-select', 'period-input', 'shorting-toggle'].forEach(i => document.getElementById(i).addEventListener('change', () => run(true)));
-        document.getElementById('balance-input').addEventListener('input', () => run(false));
+        document.getElementById('balance-input').addEventListener('input', () => run(true));
 
         let gameRunning = false, gameActive = false;
         const cvs = document.getElementById('flappyCanvas'), c = cvs.getContext('2d');
-        let bird = { x: 50, y: 150, w: 20, h: 20, g: 0.08, v: 0, jump: -3.0 };
+        let bird = { x: 50, y: 150, w: 20, h: 20, g: 0.015, v: 0, jump: -0.8 };
         let pipes = [], powerups = [], frame = 0, score = 0;
         function toggleGame() {
             const container = document.getElementById('game-container');
@@ -721,8 +738,8 @@
             if (!gameRunning) return;
             bird.v += bird.g; bird.y += bird.v;
             if (bird.y + bird.h > cvs.height || bird.y < 0) { gameRunning = false; return; }
-            if (frame % 180 === 0) {
-                const g = 180, t = Math.random() * (cvs.height - g - 100) + 50;
+            if (frame % 360 === 0) {
+                const g = 200, t = Math.random() * (cvs.height - g - 100) + 50;
                 pipes.push({ x: cvs.width, t, b: t + g });
                 // Place powerup near the pipes (top or bottom of the gap) for risk/reward
                 if (Math.random() > 0.5) {
@@ -731,13 +748,13 @@
                 }
             }
             pipes.forEach((p, i) => {
-                p.x -= 1.2;
+                p.x -= 0.3;
                 if (bird.x + bird.w > p.x && bird.x < p.x + 50 && (bird.y < p.t || bird.y + bird.h > p.b)) gameRunning = false;
                 if (!p.passed && bird.x > p.x + 50) { score++; p.passed = true; }
                 if (p.x + 50 < 0) pipes.splice(i, 1);
             });
             powerups.forEach((p, i) => {
-                p.x -= 1.2;
+                p.x -= 0.3;
                 if (!p.collected && Math.hypot(bird.x + bird.w/2 - p.x, bird.y + bird.h/2 - p.y) < p.r + 10) { p.collected = true; score += 5; }
                 if (p.x + p.r < 0) powerups.splice(i, 1);
             });

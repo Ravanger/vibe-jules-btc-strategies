@@ -103,7 +103,8 @@ export class Portfolio {
     printLedger() {
         console.log("\n--- Trading Ledger ---");
         this.ledger.forEach(t => {
-            console.log(`Date ${t.date}: ${t.action.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2).padEnd(10)} | Bal($): $${t.postCash.toFixed(2).padEnd(10)} | Stack: ${t.postAsset.toFixed(4)} | Reason: ${t.reason}`);
+            const dateStr = typeof t.date === 'number' ? new Date(t.date).toLocaleDateString() : t.date;
+            console.log(`Date ${dateStr}: ${t.action.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2).padEnd(10)} | Bal($): $${t.postCash.toFixed(2).padEnd(10)} | Stack: ${t.postAsset.toFixed(4)} | Reason: ${t.reason}`);
         });
     }
 }

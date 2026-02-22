@@ -10,8 +10,8 @@ export async function runFlappyBird(): Promise<void> {
         let score = 0;
         let gameOver = false;
 
-        const gravity = 0.15;
-        const jumpStrength = -0.7;
+        const gravity = 0.02;
+        const jumpStrength = -0.1;
 
         process.stdin.setRawMode(true);
         process.stdin.resume();
@@ -45,8 +45,8 @@ export async function runFlappyBird(): Promise<void> {
             birdVelocity += gravity;
             birdY += birdVelocity;
 
-            // Move pipes every 2 frames to slow down
-            if (frame % 2 === 0) {
+            // Move pipes every 4 frames to slow down
+            if (frame % 4 === 0) {
                 pipes.forEach(pipe => pipe.x--);
             }
             if (pipes[0].x < 0) {

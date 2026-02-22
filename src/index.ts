@@ -15,7 +15,7 @@ async function main() {
     const goalArg = args.find(a => a.startsWith("--goal="))?.split("=")[1] as PortfolioGoal || "USD";
     const daysArg = parseInt(args.find(a => a.startsWith("--days="))?.split("=")[1] || "60");
 
-    console.log(`Starting Crypto Trading Simulation (${daysArg} Days)...`);
+    console.log(`Starting Crypto Trading Strategies Simulation (${daysArg} Days)...`);
     
     const fullData = await fetchBitcoinData();
     if (fullData.length === 0) {
@@ -25,7 +25,8 @@ async function main() {
 
     const pricesData = fullData.slice(-daysArg - 200);
     const prices = pricesData.map(d => d.price);
-    const signals = getTradingSignals(prices, strategyArg);
+    const dates = pricesData.map(d => d.timestamp);
+    const signals = getTradingSignals(prices, strategyArg, dates);
 
     const simSignals = signals.slice(-daysArg);
     const startPrice = simSignals[0].price;

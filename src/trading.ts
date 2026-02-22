@@ -166,7 +166,7 @@ function calculateDonchian(prices: number[], period: number = 20): { up: number[
     return { up, lo };
 }
 
-export function getTradingSignals(prices: number[], strategy: string = "golden_cross", allowShorting: boolean = false): Signal[] {
+export function getTradingSignals(prices: number[], strategy: string = "golden_cross", dates?: number[]): Signal[] {
     const signals: Signal[] = [];
 
     if (strategy === "golden_cross") {
@@ -179,7 +179,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (ma7[i-1] <= ma30[i-1] && ma7[i] > ma30[i]) { action = "BUY"; reason = "Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend."; }
                 else if (ma7[i-1] >= ma30[i-1] && ma7[i] < ma30[i]) { action = "SELL"; reason = "Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal."; }
             }
-            signals.push({ date: i, price: prices[i], ma7: ma7[i], ma30: ma30[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ma7: ma7[i], ma30: ma30[i], action, reason });
         }
     } else if (strategy === "ema_cross") {
         const e12 = calculateEMA(prices, 12);
@@ -191,7 +191,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { action = "BUY"; reason = "EMA 12 crossed above EMA 26; entering on momentum shift."; }
                 else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { action = "SELL"; reason = "EMA 12 crossed below EMA 26; exiting as momentum fades."; }
             }
-            signals.push({ date: i, price: prices[i], ema12: e12[i], ema26: e26[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ema12: e12[i], ema26: e26[i], action, reason });
         }
     } else if (strategy === "sma_cross") {
         const s50 = rollingMean(prices, 50);
@@ -203,7 +203,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { action = "BUY"; reason = "SMA 50 crossed above SMA 200; major 'Golden Cross' detected."; }
                 else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { action = "SELL"; reason = "SMA 50 crossed below SMA 200; major 'Death Cross' detected."; }
             }
-            signals.push({ date: i, price: prices[i], sma50: s50[i], sma200: s200[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], sma50: s50[i], sma200: s200[i], action, reason });
         }
     } else if (strategy === "rsi") {
         const rsi = calculateRSI(prices);
@@ -214,7 +214,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "BUY"; reason = "RSI recovered from oversold (<30); buying the dip."; }
                 else if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SELL"; reason = "RSI dropped from overbought (>70); profit taking."; }
             }
-            signals.push({ date: i, price: prices[i], rsi: rsi[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], rsi: rsi[i], action, reason });
         }
     } else if (strategy === "macd") {
         const ema12 = calculateEMA(prices, 12);
@@ -228,7 +228,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "BUY"; reason = "MACD bullish crossover above signal line."; }
                 else if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SELL"; reason = "MACD bearish crossover below signal line."; }
             }
-            signals.push({ date: i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
         }
     } else if (strategy === "stochastic") {
         const { k, d } = calculateStochastic(prices);
@@ -239,7 +239,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { action = "BUY"; reason = "Stochastic Bullish crossover in oversold region."; }
                 else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { action = "SELL"; reason = "Stochastic Bearish crossover in overbought region."; }
             }
-            signals.push({ date: i, price: prices[i], stochK: k[i], stochD: d[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], stochK: k[i], stochD: d[i], action, reason });
         }
     } else if (strategy === "williams_r") {
         const r = calculateWilliamsR(prices);
@@ -250,7 +250,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (r[i-1] <= -80 && r[i] > -80) { action = "BUY"; reason = "Williams %R recovered from extreme oversold."; }
                 else if (r[i-1] >= -20 && r[i] < -20) { action = "SELL"; reason = "Williams %R dropped from extreme overbought."; }
             }
-            signals.push({ date: i, price: prices[i], williamsR: r[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], williamsR: r[i], action, reason });
         }
     } else if (strategy === "cci") {
         const cci = calculateCCI(prices);
@@ -261,7 +261,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (cci[i-1] <= -100 && cci[i] > -100) { action = "BUY"; reason = "CCI recovered from oversold territory."; }
                 else if (cci[i-1] >= 100 && cci[i] < 100) { action = "SELL"; reason = "CCI dropped from overbought territory."; }
             }
-            signals.push({ date: i, price: prices[i], cci: cci[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], cci: cci[i], action, reason });
         }
     } else if (strategy === "bollinger") {
         const ma20 = rollingMean(prices, 20);
@@ -280,7 +280,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i] < lower[i]) { action = "BUY"; reason = "Price broke below Lower Bollinger Band; expecting bounce."; }
                 else if (prices[i] > upper[i]) { action = "SELL"; reason = "Price broke above Upper Bollinger Band; expecting reversal."; }
             }
-            signals.push({ date: i, price: prices[i], ma20: ma20[i], upper: upper[i], lower: lower[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ma20: ma20[i], upper: upper[i], lower: lower[i], action, reason });
         }
     } else if (strategy === "mean_reversion") {
         const ma20 = rollingMean(prices, 20);
@@ -291,7 +291,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i] < ma20[i] * 0.95) { action = "BUY"; reason = "Price is 5% below 20-day mean; buying for reversion."; }
                 else if (prices[i] > ma20[i] * 1.05) { action = "SELL"; reason = "Price is 5% above 20-day mean; selling for reversion."; }
             }
-            signals.push({ date: i, price: prices[i], ma20: ma20[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ma20: ma20[i], action, reason });
         }
     } else if (strategy === "short_rsi") {
         const rsi = calculateRSI(prices);
@@ -302,7 +302,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SHORT"; reason = "RSI dropped from overbought (>70); entering short position."; }
                 else if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "COVER"; reason = "RSI recovered from oversold (<30); covering short position."; }
             }
-            signals.push({ date: i, price: prices[i], rsi: rsi[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], rsi: rsi[i], action, reason });
         }
     } else if (strategy === "short_macd") {
         const ema12 = calculateEMA(prices, 12);
@@ -316,7 +316,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SHORT"; reason = "MACD bearish crossover; entering short as trend weakens."; }
                 else if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "COVER"; reason = "MACD bullish crossover; covering short as trend strengthens."; }
             }
-            signals.push({ date: i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
         }
     } else if (strategy === "psar") {
         const sar = calculateSAR(prices);
@@ -327,7 +327,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i-1] <= sar[i-1] && prices[i] > sar[i]) { action = "BUY"; reason = "Price crossed above Parabolic SAR; trend is now bullish."; }
                 else if (prices[i-1] >= sar[i-1] && prices[i] < sar[i]) { action = "SELL"; reason = "Price crossed below Parabolic SAR; trend is now bearish."; }
             }
-            signals.push({ date: i, price: prices[i], sar: sar[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], sar: sar[i], action, reason });
         }
     } else if (strategy === "donchian") {
         const { up, lo } = calculateDonchian(prices);
@@ -338,7 +338,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i] >= up[i-1]) { action = "BUY"; reason = "Price broke above 20-day high; entering on momentum."; }
                 else if (prices[i] <= lo[i-1]) { action = "SELL"; reason = "Price broke below 20-day low; exiting breakout."; }
             }
-            signals.push({ date: i, price: prices[i], up: up[i], lo: lo[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], up: up[i], lo: lo[i], action, reason });
         }
     } else if (strategy === "short_bollinger") {
         const ma20 = rollingMean(prices, 20);
@@ -356,7 +356,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i] > upper[i]) { action = "SHORT"; reason = "Price hit Upper Bollinger Band; shorting for reversal."; }
                 else if (prices[i] < ma20[i]) { action = "COVER"; reason = "Price returned to mean (MA 20); covering short position."; }
             }
-            signals.push({ date: i, price: prices[i], ma20: ma20[i], upper: upper[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ma20: ma20[i], upper: upper[i], action, reason });
         }
     } else if (strategy === "short_mean_reversion") {
         const ma20 = rollingMean(prices, 20);
@@ -367,7 +367,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 if (prices[i] > ma20[i] * 1.10) { action = "SHORT"; reason = "Price is 10% above 20-day mean; shorting for reversion."; }
                 else if (prices[i] < ma20[i]) { action = "COVER"; reason = "Price returned to mean; covering short."; }
             }
-            signals.push({ date: i, price: prices[i], ma20: ma20[i], action, reason });
+            signals.push({ date: dates ? dates[i] : i, price: prices[i], ma20: ma20[i], action, reason });
         }
     }
     return signals;
