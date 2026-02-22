@@ -144,6 +144,7 @@
             <!-- Strategy summary will be injected here -->
         </div>
 
+        
         <div id="performance-summary" class="stats">
             <!-- Summary will be injected here -->
         </div>
@@ -276,6 +277,29 @@
             }
             return ema;
         }
+
+        function calculateRSI(prices, period = 14) {
+            const rsi = new Array(prices.length).fill(NaN);
+            if (prices.length <= period) return rsi;
+            let gains = 0; let losses = 0;
+            for (let i = 1; i <= period; i++) {
+                const diff = prices[i] - prices[i - 1];
+                if (diff >= 0) gains += diff; else losses -= diff;
+            }
+            let avgGain = gains / period; let avgLoss = losses / period;
+            rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+            for (let i = period + 1; i < prices.length; i++) {
+                const diff = prices[i] - prices[i - 1];
+                let currentGain = diff >= 0 ? diff : 0;
+                let currentLoss = diff < 0 ? -diff : 0;
+                avgGain = (avgGain * (period - 1) + currentGain) / period;
+                avgLoss = (avgLoss * (period - 1) + currentLoss) / period;
+                const rs = avgGain / avgLoss;
+                rsi[i] = 100 - (100 / (1 + rs));
+            }
+            return rsi;
+        }
+
 
         function calculateRSI(prices, period = 14) {
             const rsi = new Array(prices.length).fill(NaN);
@@ -641,6 +665,7 @@
         const statusText = document.getElementById('game-status');
 
         let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.3, lift: -6, velocity: 0 };
+        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.4, lift: -8, velocity: 0 };
         let pipes = [];
         let frame = 0;
         let score = 0;
@@ -693,6 +718,7 @@
             for (let i = pipes.length - 1; i >= 0; i--) {
                 const pipe = pipes[i];
                 pipe.x -= 1.5;
+                pipe.x -= 2;
 
                 // Collision
                 if (bird.x + bird.width > pipe.x && bird.x < pipe.x + 50) {
