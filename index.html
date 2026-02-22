@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Trading Simulator & Flappy Bird</title>
+    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        #game-container {
+            display: none;
+            text-align: center;
+            margin-top: 40px;
+        }
+        canvas {
+            border: 2px solid #333;
+            background-color: #70c5ce;
+            display: block;
+            margin: 20px auto;
+        }
+        .btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #2ecc71;
+        }
+        .btn-secret {
+            background-color: #e74c3c;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bitcoin Trading Simulation (60 Days)</h1>
+        <p>This simulation uses Geometric Brownian Motion and a Golden Cross (7/30 MA) strategy.</p>
+        
+        <div id="performance-summary" class="stats">
+            <!-- Summary will be injected here -->
+        </div>
+
+        <h2>Trading Ledger</h2>
+        <div style="overflow-x:auto;">
+            <table id="ledger-table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Type</th>
+                        <th>Price ($)</th>
+                        <th>Amount (BTC)</th>
+                        <th>Value ($)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ledger rows will be injected here -->
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-secret" onclick="toggleGame()">Play Flappy Bird (Easter Egg)</button>
+
+        <div id="game-container">
+            <h2>Flappy Bird</h2>
+            <p>Press SPACE or Click to Jump. Score as many points as you can!</p>
+            <canvas id="flappyCanvas" width="400" height="500"></canvas>
+            <p id="game-status"></p>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Simulation Logic
+         */
+        function randn() {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function generatePrices(days, initialPrice = 60000, drift = 0.0005, volatility = 0.05) {
+            const prices = [initialPrice];
+            let currentPrice = initialPrice;
+            for (let i = 1; i < days; i++) {
+                const shock = drift - 0.5 * Math.pow(volatility, 2) + volatility * randn();
+                currentPrice = currentPrice * Math.exp(shock);
+                prices.push(currentPrice);
+            }
+            return prices;
+        }
+
+        /**
+         * Trading Strategy Logic
+         */
+        function rollingMean(values, window) {
+            const result = [];
+            for (let i = 0; i < values.length; i++) {
+                if (i < window - 1) {
+                    result.push(NaN);
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < window; j++) {
+                        sum += values[i - j];
+                    }
+                    result.push(sum / window);
+                }
+            }
+            return result;
+        }
+
+        function getTradingSignals(prices) {
+            const df = new dfd.DataFrame({ price: prices });
+            const priceValues = df['price'].values;
+            const ma7Values = rollingMean(priceValues, 7);
+            const ma30Values = rollingMean(priceValues, 30);
+
+            const signals = [];
+            for (let i = 0; i < prices.length; i++) {
+                const currentMa7 = ma7Values[i];
+                const currentMa30 = ma30Values[i];
+                let action = "HOLD";
+
+                if (!isNaN(currentMa7) && !isNaN(currentMa30)) {
+                    const prevMa7 = i > 0 ? ma7Values[i - 1] : NaN;
+                    const prevMa30 = i > 0 ? ma30Values[i - 1] : NaN;
+
+                    if (!isNaN(prevMa7) && !isNaN(prevMa30)) {
+                        if (prevMa7 <= prevMa30 && currentMa7 > currentMa30) {
+                            action = "BUY";
+                        } else if (prevMa7 >= prevMa30 && currentMa7 < currentMa30) {
+                            action = "SELL";
+                        }
+                    }
+                }
+
+                signals.push({
+                    date: i,
+                    price: prices[i],
+                    ma7: currentMa7,
+                    ma30: currentMa30,
+                    action
+                });
+            }
+            return signals;
+        }
+
+        /**
+         * Portfolio Management
+         */
+        class Portfolio {
+            constructor(initialBalance = 100000) {
+                this.cash = initialBalance;
+                this.initialBalance = initialBalance;
+                this.btc = 0;
+                this.ledger = [];
+            }
+
+            executeTrade(signal) {
+                if (signal.action === "BUY" && this.cash > 0) {
+                    const amountToBuy = this.cash / signal.price;
+                    const tradeValue = this.cash;
+                    this.ledger.push({
+                        day: signal.date,
+                        type: "BUY",
+                        price: signal.price,
+                        amount: amountToBuy,
+                        value: tradeValue
+                    });
+                    this.btc += amountToBuy;
+                    this.cash = 0;
+                } else if (signal.action === "SELL" && this.btc > 0) {
+                    const tradeValue = this.btc * signal.price;
+                    this.ledger.push({
+                        day: signal.date,
+                        type: "SELL",
+                        price: signal.price,
+                        amount: this.btc,
+                        value: tradeValue
+                    });
+                    this.cash += tradeValue;
+                    this.btc = 0;
+                }
+            }
+
+            getPortfolioValue(currentPrice) {
+                return this.cash + this.btc * currentPrice;
+            }
+        }
+
+        /**
+         * Main Execution and UI Updates
+         */
+        function runSimulation() {
+            const days = 60;
+            const prices = generatePrices(days);
+            const signals = getTradingSignals(prices);
+            const portfolio = new Portfolio(100000);
+
+            signals.forEach(s => portfolio.executeTrade(s));
+
+            updateUI(portfolio, prices[days - 1], signals);
+        }
+
+        function updateUI(portfolio, finalPrice, signals) {
+            const summaryDiv = document.getElementById('performance-summary');
+            const finalValue = portfolio.getPortfolioValue(finalPrice);
+            const profit = finalValue - portfolio.initialBalance;
+            const returnPct = (profit / portfolio.initialBalance) * 100;
+
+            summaryDiv.innerHTML = `
+                <div class="stat-card">
+                    <h3>Initial Balance</h3>
+                    <p>$${portfolio.initialBalance.toLocaleString()}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Final Value</h3>
+                    <p>$${finalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Profit / Loss</h3>
+                    <p style="color: ${profit >= 0 ? '#27ae60' : '#e74c3c'}">
+                        $${profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} 
+                        (${returnPct.toFixed(2)}%)
+                    </p>
+                </div>
+            `;
+
+            const tbody = document.querySelector('#ledger-table tbody');
+            tbody.innerHTML = '';
+            if (portfolio.ledger.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No trades executed.</td></tr>';
+            } else {
+                portfolio.ledger.forEach(trade => {
+                    const row = `
+                        <tr>
+                            <td>${trade.day}</td>
+                            <td><b style="color: ${trade.type === 'BUY' ? '#27ae60' : '#e74c3c'}">${trade.type}</b></td>
+                            <td>$${trade.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                            <td>${trade.amount.toFixed(4)}</td>
+                            <td>$${trade.value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+        }
+
+        /**
+         * Flappy Bird Easter Egg
+         */
+        let gameRunning = false;
+        const canvas = document.getElementById('flappyCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusText = document.getElementById('game-status');
+
+        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
+        let pipes = [];
+        let frame = 0;
+        let score = 0;
+
+        function toggleGame() {
+            const container = document.getElementById('game-container');
+            if (container.style.display === 'block') {
+                container.style.display = 'none';
+                gameRunning = false;
+            } else {
+                container.style.display = 'block';
+                resetGame();
+                gameRunning = true;
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function resetGame() {
+            bird.y = 150;
+            bird.velocity = 0;
+            pipes = [];
+            score = 0;
+            frame = 0;
+            statusText.innerText = "";
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            update();
+            draw();
+            frame++;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                gameOver();
+            }
+
+            if (frame % 100 === 0) {
+                const gap = 120;
+                const topHeight = Math.floor(Math.random() * (canvas.height - gap - 100)) + 50;
+                pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap });
+            }
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                const pipe = pipes[i];
+                pipe.x -= 3;
+
+                // Collision
+                if (bird.x + bird.width > pipe.x && bird.x < pipe.x + 50) {
+                    if (bird.y < pipe.top || bird.y + bird.height > pipe.bottom) {
+                        gameOver();
+                    }
+                }
+
+                // Scoring: check if bird just passed the pipe
+                if (!pipe.passed && bird.x > pipe.x + 50) {
+                    score++;
+                    pipe.passed = true;
+                }
+
+                if (pipe.x + 50 < 0) {
+                    pipes.splice(i, 1);
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Bird
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+
+            // Pipes
+            ctx.fillStyle = '#2ecc71';
+            pipes.forEach(pipe => {
+                ctx.fillRect(pipe.x, 0, 50, pipe.top);
+                ctx.fillRect(pipe.x, pipe.bottom, 50, canvas.height - pipe.bottom);
+            });
+
+            // Score
+            ctx.fillStyle = '#fff';
+            ctx.font = '24px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            statusText.innerText = "Game Over! Click to Restart.";
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (!gameRunning && document.getElementById('game-container').style.display === 'block') {
+                    resetGame();
+                    gameRunning = true;
+                    gameLoop();
+                } else {
+                    bird.velocity = bird.lift;
+                }
+                e.preventDefault();
+            }
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            if (!gameRunning && document.getElementById('game-container').style.display === 'block') {
+                resetGame();
+                gameRunning = true;
+                gameLoop();
+            } else {
+                bird.velocity = bird.lift;
+            }
+        });
+
+        // Initialize simulation on load
+        window.onload = runSimulation;
+    </script>
+</body>
+</html>
