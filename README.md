@@ -1,8 +1,8 @@
-# Crypto Trading Simulator
+# Crypto Trading Strategies Simulation
 
 A professional-grade, portable cryptocurrency trading simulator with real-world data integration, multiple technical strategies, and portfolio optimization modes.
 
-![Crypto Trading Simulator](btc_sim_latest.png)
+![Crypto Trading Strategies Simulation](btc_sim_latest.png)
 
 ## 🚀 Features
 
@@ -52,7 +52,7 @@ npm test
 
 ## 📚 Credits & Libraries
 - **Data Source**: [CoinGecko](https://www.coingecko.com/)
-- **Developer**: [Google Jules](https://github.com/GoogleJules)
+- **Developer**: [Google Jules](https://jules.google/)
 
 ---
 *Disclaimer: This is a simulator for educational and entertainment purposes only. Past performance does not guarantee future results.*

@@ -9,7 +9,7 @@ describe("Portfolio", () => {
     });
 
     test("should initialize with ACCUMULATE goal", () => {
-        const p = new Portfolio(1, "ACCUMULATE", 50000);
+        const p = new Portfolio(50000, "ACCUMULATE", 50000);
         expect(p.asset).toBe(1);
         expect(p.cash).toBe(0);
         expect(p.initialValueUSD).toBe(50000);

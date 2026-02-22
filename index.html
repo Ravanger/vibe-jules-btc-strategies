@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Trading Simulator</title>
+    <title>Crypto Trading Strategies Simulation</title>
     <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -91,7 +91,7 @@
         <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
             <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
         </button>
-        <h1>Crypto Trading Simulation</h1>
+        <h1>Crypto Trading Strategies Simulation</h1>
 
         <div class="controls">
             <div class="control-group">
@@ -143,11 +143,15 @@
             </div>
             <div class="control-group">
                 <label for="period-input">Period (Days):</label>
-                <input type="number" id="period-input" value="60" min="10" max="330">
+                <input type="number" id="period-input" value="360" min="10" max="365">
             </div>
             <div class="control-group">
                 <label for="balance-input" id="balance-label">Initial Balance ($):</label>
                 <input type="number" id="balance-input" value="100000" min="0.00001">
+            </div>
+            <div class="control-group" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <input type="checkbox" id="shorting-toggle" style="width: 20px; height: 20px;">
+                <label for="shorting-toggle" style="font-weight: bold;">Enable Shorting</label>
             </div>
         </div>
 
@@ -182,6 +186,12 @@
             </div>
         </div>
 
+        <div id="shorting-definitions" style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 5px; font-size: 0.85em; border-left: 4px solid #e67e22;">
+            <b>Understanding Shorting:</b>
+            <p style="margin: 5px 0;"><b>SHORT:</b> Borrowing an asset to sell it immediately, hoping to buy it back later at a lower price. This allows you to profit from price decreases.</p>
+            <p style="margin: 5px 0;"><b>COVER:</b> Buying back the borrowed asset to close the short position. Your profit is the difference between the initial sell price and the later buy price.</p>
+        </div>
+
         <h2>Trading Ledger</h2>
         <div style="overflow-x:auto;">
             <table id="ledger-table">
@@ -208,8 +218,9 @@
 
         <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--table-border); text-align: center; font-size: 0.8em; color: #777;">
             <p>Data provided by <a href="https://www.coingecko.com/" target="_blank" style="color: var(--accent-color);">CoinGecko</a>.
-               Created by <a href="https://github.com/GoogleJules" target="_blank" style="color: var(--accent-color);">Google Jules</a>.</p>
-            <p>&copy; 2026 Crypto Trading Simulator</p>
+               Built with <a href="https://js.danfo.js.org/" target="_blank" style="color: var(--accent-color);">Danfo.js</a> & <a href="https://www.chartjs.org/" target="_blank" style="color: var(--accent-color);">Chart.js</a>.</p>
+            <p>Created by <a href="https://jules.google/" target="_blank" style="color: var(--accent-color);">Google Jules</a>. | <span id="last-refreshed">Last Refreshed: Never</span></p>
+            <p>&copy; 2026 Crypto Trading Strategies Simulation</p>
         </footer>
     </div>
 
@@ -219,13 +230,18 @@
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
                 const { timestamp, data } = JSON.parse(cached);
-                if (Date.now() - timestamp < 12 * 60 * 60 * 1000) return data;
+                if (Date.now() - timestamp < 12 * 60 * 60 * 1000) {
+                    document.getElementById('last-refreshed').innerText = `Last Refreshed: ${new Date(timestamp).toLocaleString()}`;
+                    return data;
+                }
             }
             try {
-                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=365&interval=daily`);
+                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=500&interval=daily`);
                 const data = await res.json();
                 const prices = data.prices.map(p => ({ timestamp: p[0], price: p[1] }));
-                localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), data: prices }));
+                const now = Date.now();
+                localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, data: prices }));
+                document.getElementById('last-refreshed').innerText = `Last Refreshed: ${new Date(now).toLocaleString()}`;
                 return prices;
             } catch (e) { return null; }
         }
@@ -305,8 +321,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (m7[i] && m30[i] && m7[i-1] && m30[i-1]) {
-                        if (m7[i-1] <= m30[i-1] && m7[i] > m30[i]) { a = "BUY"; r = "Fast MA crossed above Slow MA"; }
-                        else if (m7[i-1] >= m30[i-1] && m7[i] < m30[i]) { a = "SELL"; r = "Fast MA crossed below Slow MA"; }
+                        if (m7[i-1] <= m30[i-1] && m7[i] > m30[i]) { a = "BUY"; r = "Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend."; }
+                        else if (m7[i-1] >= m30[i-1] && m7[i] < m30[i]) { a = "SELL"; r = "Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, ma7: m7[i], ma30: m30[i], action: a, reason: r });
                 });
@@ -315,8 +331,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (e12[i] && e26[i] && e12[i-1] && e26[i-1]) {
-                        if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { a = "BUY"; r = "EMA 12 crossed above EMA 26"; }
-                        else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { a = "SELL"; r = "EMA 12 crossed below EMA 26"; }
+                        if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { a = "BUY"; r = "EMA 12 crossed above EMA 26; entering on momentum shift."; }
+                        else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { a = "SELL"; r = "EMA 12 crossed below EMA 26; exiting as momentum fades."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, ema12: e12[i], ema26: e26[i], action: a, reason: r });
                 });
@@ -325,8 +341,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (s50[i] && s200[i] && s50[i-1] && s200[i-1]) {
-                        if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { a = "BUY"; r = "SMA 50 crossed above SMA 200"; }
-                        else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { a = "SELL"; r = "SMA 50 crossed below SMA 200"; }
+                        if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { a = "BUY"; r = "SMA 50 crossed above SMA 200; major 'Golden Cross' detected."; }
+                        else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { a = "SELL"; r = "SMA 50 crossed below SMA 200; major 'Death Cross' detected."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, sma50: s50[i], sma200: s200[i], action: a, reason: r });
                 });
@@ -335,8 +351,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (rsi[i] && rsi[i-1]) {
-                        if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "BUY"; r = "RSI recovering from oversold"; }
-                        else if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SELL"; r = "RSI falling from overbought"; }
+                        if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "BUY"; r = "RSI recovered from oversold (<30); buying the dip."; }
+                        else if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SELL"; r = "RSI dropped from overbought (>70); profit taking."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, rsi: rsi[i], action: a, reason: r });
                 });
@@ -347,8 +363,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (macd[i] && signal[i] && macd[i-1] && signal[i-1]) {
-                        if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "BUY"; r = "MACD Bullish crossover"; }
-                        else if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SELL"; r = "MACD Bearish crossover"; }
+                        if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "BUY"; r = "MACD bullish crossover above signal line."; }
+                        else if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SELL"; r = "MACD bearish crossover below signal line."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, macd: macd[i], signal: signal[i], action: a, reason: r });
                 });
@@ -357,8 +373,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (k[i] && d[i] && k[i-1] && d[i-1]) {
-                        if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { a = "BUY"; r = "Stoch Bullish crossover in oversold"; }
-                        else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { a = "SELL"; r = "Stoch Bearish crossover in overbought"; }
+                        if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { a = "BUY"; r = "Stochastic Bullish crossover in oversold region."; }
+                        else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { a = "SELL"; r = "Stochastic Bearish crossover in overbought region."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, stochK: k[i], stochD: d[i], action: a, reason: r });
                 });
@@ -367,8 +383,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (wr[i] && wr[i-1]) {
-                        if (wr[i-1] <= -80 && wr[i] > -80) { a = "BUY"; r = "Williams %R recovered from oversold"; }
-                        else if (wr[i-1] >= -20 && wr[i] < -20) { a = "SELL"; r = "Williams %R dropped from overbought"; }
+                        if (wr[i-1] <= -80 && wr[i] > -80) { a = "BUY"; r = "Williams %R recovered from extreme oversold."; }
+                        else if (wr[i-1] >= -20 && wr[i] < -20) { a = "SELL"; r = "Williams %R dropped from extreme overbought."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, williamsR: wr[i], action: a, reason: r });
                 });
@@ -379,8 +395,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (up[i] && lo[i]) {
-                        if (p[i] < lo[i]) { a = "BUY"; r = "Price broke below Lower Band"; }
-                        else if (p[i] > up[i]) { a = "SELL"; r = "Price broke above Upper Band"; }
+                        if (p[i] < lo[i]) { a = "BUY"; r = "Price broke below Lower Bollinger Band; expecting bounce."; }
+                        else if (p[i] > up[i]) { a = "SELL"; r = "Price broke above Upper Bollinger Band; expecting reversal."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, upper: up[i], lower: lo[i], action: a, reason: r });
                 });
@@ -389,8 +405,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (ma[i]) {
-                        if (v < ma[i] * 0.95) { a = "BUY"; r = "Price 5% below 20-day average"; }
-                        else if (v > ma[i] * 1.05) { a = "SELL"; r = "Price 5% above 20-day average"; }
+                        if (v < ma[i] * 0.95) { a = "BUY"; r = "Price is 5% below 20-day mean; buying for reversion."; }
+                        else if (v > ma[i] * 1.05) { a = "SELL"; r = "Price is 5% above 20-day mean; selling for reversion."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, ma20: ma[i], action: a, reason: r });
                 });
@@ -399,8 +415,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (cci[i] && cci[i-1]) {
-                        if (cci[i-1] <= -100 && cci[i] > -100) { a = "BUY"; r = "CCI recovered from oversold"; }
-                        else if (cci[i-1] >= 100 && cci[i] < 100) { a = "SELL"; r = "CCI dropped from overbought"; }
+                        if (cci[i-1] <= -100 && cci[i] > -100) { a = "BUY"; r = "CCI recovered from oversold territory."; }
+                        else if (cci[i-1] >= 100 && cci[i] < 100) { a = "SELL"; r = "CCI dropped from overbought territory."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, cci: cci[i], action: a, reason: r });
                 });
@@ -409,8 +425,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (rsi[i] && rsi[i-1]) {
-                        if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SHORT"; r = "Entering short as RSI peaks"; }
-                        else if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "COVER"; r = "Covering short as RSI bottoms"; }
+                        if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SHORT"; r = "RSI dropped from overbought (>70); entering short position."; }
+                        else if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "COVER"; r = "RSI recovered from oversold (<30); covering short position."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, rsi: rsi[i], action: a, reason: r });
                 });
@@ -421,8 +437,8 @@
                 p.forEach((v, i) => {
                     let a = "HOLD", r = "";
                     if (macd[i] && signal[i] && macd[i-1] && signal[i-1]) {
-                        if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SHORT"; r = "Entering short on bearish MACD crossover"; }
-                        else if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "COVER"; r = "Covering short on bullish MACD crossover"; }
+                        if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SHORT"; r = "MACD bearish crossover; entering short as trend weakens."; }
+                        else if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "COVER"; r = "MACD bullish crossover; covering short as trend strengthens."; }
                     }
                     sigs.push({ date: pricesData[i].timestamp, price: v, macd: macd[i], signal: signal[i], action: a, reason: r });
                 });
@@ -432,9 +448,9 @@
 
         class Portfolio {
             constructor(balance, mode, startPrice) {
-                this.initVal = mode === 'ACCUMULATE' ? balance * startPrice : balance;
+                this.initVal = balance;
                 this.cash = mode === 'ACCUMULATE' ? 0 : balance;
-                this.asset = mode === 'ACCUMULATE' ? balance : 0;
+                this.asset = mode === 'ACCUMULATE' ? balance / startPrice : 0;
                 this.ledger = [];
             }
             trade(s) {
@@ -460,53 +476,67 @@
             getValue(p) { return this.cash + this.asset * p; }
         }
 
-        let chart = null;
-        async function run() {
+        let chart = null, currentSim = [];
+        async function run(forceGraphRedraw = true) {
             const coin = document.getElementById('crypto-select').value;
             const coinName = document.getElementById('crypto-select').options[document.getElementById('crypto-select').selectedIndex].text.split('(')[1].replace(')', '');
             const strat = document.getElementById('strategy-select').value;
             const mode = document.getElementById('mode-select').value;
             const days = +document.getElementById('period-input').value;
             const bal = +document.getElementById('balance-input').value;
+            const shortingEnabled = document.getElementById('shorting-toggle').checked;
 
             document.getElementById('balance-label').innerText = mode === 'ACCUMULATE' ? `Initial Balance (${coinName}):` : "Initial Balance ($):";
 
-            const data = await fetchCryptoData(coin);
-            if (!data) return;
-            const sim = getTradingSignals(data.slice(-days - 200), strat).slice(-days);
-            const port = new Portfolio(bal, mode, sim[0].price);
-            sim.forEach(s => port.trade(s));
+            if (forceGraphRedraw) {
+                const data = await fetchCryptoData(coin);
+                if (!data) return;
+                currentSim = getTradingSignals(data.slice(-days - 200), strat).slice(-days);
+            }
 
-            const finalPrice = sim[sim.length - 1].price;
+            if (shortingEnabled) {
+                currentSim.forEach(s => {
+                    if (s.action === "BUY") { s.action = "COVER"; s.reason = s.reason.replace("BUY", "COVER"); }
+                    else if (s.action === "SELL") { s.action = "SHORT"; s.reason = s.reason.replace("SELL", "SHORT"); }
+                });
+            }
+
+            if (!currentSim.length) return;
+            const port = new Portfolio(bal, mode, currentSim[0].price);
+            currentSim.forEach(s => port.trade(s));
+
+            const finalPrice = currentSim[currentSim.length - 1].price;
             const finalVal = port.getValue(finalPrice);
             const profit = finalVal - port.initVal;
 
             document.getElementById('performance-summary').innerHTML = `
-                <div class="stat-card"><h3>Initial Value</h3><p>$${port.initVal.toLocaleString()}</p></div>
-                <div class="stat-card"><h3>Final Value</h3><p>$${finalVal.toLocaleString()}</p></div>
-                <div class="stat-card"><h3>Profit/Loss</h3><p style="color:${profit>=0?'#27ae60':'#e74c3c'}">$${profit.toLocaleString()} (${((profit/port.initVal)*100).toFixed(2)}%)</p></div>
-                <div class="stat-card"><h3>Final Stack</h3><p>${(finalVal/finalPrice).toFixed(4)} ${coinName}</p></div>
+                <div class="stat-card"><h3>Initial Value</h3><p>$${port.initVal.toLocaleString()}<br><small>(${(port.initVal/currentSim[0].price).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card"><h3>Final Value</h3><p>$${finalVal.toLocaleString()}<br><small>(${(finalVal/finalPrice).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card"><h3>Profit/Loss</h3><p style="color:${profit>=0?'#27ae60':'#e74c3c'}">$${profit.toLocaleString()} (${((profit/port.initVal)*100).toFixed(2)}%)<br><small>(${(profit/finalPrice).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card"><h3>Final Stack</h3><p>${(finalVal/finalPrice).toFixed(4)} ${coinName}<br><small>($${finalVal.toLocaleString()})</small></p></div>
             `;
             document.querySelector('#ledger-table tbody').innerHTML = port.ledger.map(t => `
                 <tr><td>${new Date(t.date).toLocaleDateString()}</td><td><b>${t.action}</b></td><td>$${t.price.toLocaleString()}</td><td>${t.amount.toFixed(4)}</td><td>$${t.value.toLocaleString()}</td><td>${t.reason}</td></tr>
             `).join('') || '<tr><td colspan="6">No trades.</td></tr>';
 
+            if (!forceGraphRedraw) return;
+
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
             const datasets = [
-                { label: 'Price', data: sim.map(s => s.price), borderColor: isDark ? '#5dade2' : '#3498db', pointRadius: 0, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.1)', order: 2 },
-                { label: 'BUY', data: sim.map(s => s.action === 'BUY' ? s.price : null), pointStyle: 'triangle', pointRadius: 8, showLine: false, backgroundColor: '#27ae60', order: 1 },
-                { label: 'SELL', data: sim.map(s => s.action === 'SELL' ? s.price : null), pointStyle: 'rectRot', pointRadius: 8, showLine: false, backgroundColor: '#e74c3c', order: 1 },
-                { label: 'SHORT', data: sim.map(s => s.action === 'SHORT' ? s.price : null), pointStyle: 'triangle', rotation: 180, pointRadius: 8, showLine: false, backgroundColor: '#e67e22', order: 1 },
-                { label: 'COVER', data: sim.map(s => s.action === 'COVER' ? s.price : null), pointStyle: 'circle', pointRadius: 8, showLine: false, backgroundColor: '#9b59b6', order: 1 }
+                { label: 'Price', data: currentSim.map(s => s.price), borderColor: isDark ? '#5dade2' : '#3498db', pointRadius: 0, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.1)', order: 2, yAxisID: 'y' },
+                { label: 'BUY', data: currentSim.map(s => s.action === 'BUY' ? s.price : null), pointStyle: 'triangle', pointRadius: 8, showLine: false, backgroundColor: '#27ae60', order: 1, yAxisID: 'y' },
+                { label: 'SELL', data: currentSim.map(s => s.action === 'SELL' ? s.price : null), pointStyle: 'rectRot', pointRadius: 8, showLine: false, backgroundColor: '#e74c3c', order: 1, yAxisID: 'y' },
+                { label: 'SHORT', data: currentSim.map(s => s.action === 'SHORT' ? s.price : null), pointStyle: 'triangle', rotation: 180, pointRadius: 8, showLine: false, backgroundColor: '#e67e22', order: 1, yAxisID: 'y' },
+                { label: 'COVER', data: currentSim.map(s => s.action === 'COVER' ? s.price : null), pointStyle: 'circle', pointRadius: 8, showLine: false, backgroundColor: '#9b59b6', order: 1, yAxisID: 'y' }
             ];
 
-            const addIndicator = (label, dataKey, color, dashed = true) => {
-                const data = sim.map(s => s[dataKey]);
+            const addIndicator = (label, dataKey, color, dashed = true, yAxis = 'y') => {
+                const data = currentSim.map(s => s[dataKey]);
                 if (data.some(v => !isNaN(v) && v !== null)) {
                     datasets.push({
                         label, data, borderColor: color, pointRadius: 0, borderWidth: 2,
-                        borderDash: dashed ? [5, 5] : [], fill: false, order: 3
+                        borderDash: dashed ? [5, 5] : [], fill: false, order: 3, yAxisID: yAxis
                     });
                 }
             };
@@ -516,12 +546,14 @@
             else if (strat === 'sma_cross') { addIndicator('50-Day SMA', 'sma50', '#f39c12'); addIndicator('200-Day SMA', 'sma200', '#9b59b6'); }
             else if (strat === 'bollinger') { addIndicator('Upper Band', 'upper', '#e67e22'); addIndicator('Lower Band', 'lower', '#e67e22'); }
             else if (strat === 'mean_reversion') { addIndicator('20-Day MA', 'ma20', '#f39c12'); }
+            else if (strat === 'rsi' || strat === 'short_rsi') { addIndicator('RSI', 'rsi', '#e74c3c', false, 'y1'); }
+            else if (strat === 'macd' || strat === 'short_macd') { addIndicator('MACD', 'macd', '#2ecc71', false, 'y1'); addIndicator('Signal', 'signal', '#e74c3c', true, 'y1'); }
 
             if (chart) chart.destroy();
             chart = new Chart(document.getElementById('priceChart'), {
                 type: 'line',
                 data: {
-                    labels: sim.map(s => new Date(s.date).toLocaleDateString()),
+                    labels: currentSim.map(s => new Date(s.date).toLocaleDateString()),
                     datasets: datasets
                 },
                 options: {
@@ -529,7 +561,17 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: { ticks: { color: isDark ? '#f4f4f4' : '#333' } },
-                        y: { ticks: { color: isDark ? '#f4f4f4' : '#333' } }
+                        y: {
+                            type: 'linear', display: true, position: 'left',
+                            ticks: { color: isDark ? '#f4f4f4' : '#333' },
+                            title: { display: true, text: 'Price ($)', color: isDark ? '#f4f4f4' : '#333' }
+                        },
+                        y1: {
+                            type: 'linear', display: (strat.includes('rsi') || strat.includes('macd')), position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: isDark ? '#f4f4f4' : '#333' },
+                            title: { display: true, text: 'Indicator', color: isDark ? '#f4f4f4' : '#333' }
+                        }
                     },
                     plugins: {
                         legend: { labels: { color: isDark ? '#f4f4f4' : '#333' } }
@@ -538,52 +580,73 @@
             });
 
             const strats = {
-                golden_cross: '<b>Golden Cross:</b> Uses 7/30 MAs. Best for long-term trends. Why? It filters out noise and catches major market moves.',
-                ema_cross: '<b>EMA Cross:</b> 12/26 EMA. Faster response than SMA. Why? Better for reactive traders who want to enter trends early.',
-                sma_cross: '<b>SMA Cross:</b> 50/200 SMA. The industry standard. Why? It\'s widely followed by institutions, making it a powerful self-fulfilling prophecy.',
-                rsi: '<b>RSI:</b> Relative Strength Index. Why? Identifies over-extended markets. Perfect for "buying the dip" when RSI < 30.',
-                macd: '<b>MACD:</b> Trend momentum. Why? Combines trend-following and momentum. Great for confirming a breakout.',
-                stochastic: '<b>Stochastic:</b> Why? Faster than RSI, great for sideways markets. It catches cyclical turns.',
-                williams_r: '<b>Williams %R:</b> Why? Very sensitive oscillator. Excellent for finding peak/bottom exhaustion.',
-                bollinger: '<b>Bollinger Bands:</b> Why? Measures volatility. "The squeeze" predicts big moves; band touches signal reversals.',
-                mean_reversion: '<b>Mean Reversion:</b> Why? Markets usually return to the average. Profitable in range-bound environments.',
-                cci: '<b>CCI:</b> Why? Identifies new trends and extreme conditions. Very effective in cyclical assets.',
-                short_rsi: '<b>Inverse RSI Short:</b> Why? Specifically designed to profit from over-hyped "bubbles" when RSI > 70.',
-                short_macd: '<b>MACD Bearish Short:</b> Why? Catches the exact moment bullish momentum dies, allowing you to profit from the crash.'
+                golden_cross: '<b>Golden Cross:</b> Uses 7/30 MAs. Best for long-term trends. By filtering out noise and catching major market moves, it signals strong momentum.',
+                ema_cross: '<b>EMA Cross:</b> 12/26 EMA. Faster response than SMA. It is ideal for reactive traders who want to enter trends early as momentum shifts.',
+                sma_cross: '<b>SMA Cross:</b> 50/200 SMA. The industry standard. Widely followed by institutions, making it a powerful self-fulfilling prophecy for macro trends.',
+                rsi: '<b>RSI:</b> Relative Strength Index. Identifies over-extended markets. Perfect for "buying the dip" when RSI < 30 indicates oversold conditions.',
+                macd: '<b>MACD:</b> Trend momentum. Combines trend-following and momentum, making it great for confirming a breakout before entry.',
+                stochastic: '<b>Stochastic Oscillator:</b> Faster than RSI, great for sideways markets. It excels at catching cyclical turns in range-bound environments.',
+                williams_r: '<b>Williams %R:</b> A very sensitive oscillator. Excellent for finding peak/bottom exhaustion points in volatile markets.',
+                bollinger: '<b>Bollinger Bands:</b> Measures volatility. "The squeeze" predicts big moves; band touches signal likely reversals or trend continuations.',
+                mean_reversion: '<b>Mean Reversion:</b> Markets usually return to the average. This strategy is highly profitable in stable, range-bound environments.',
+                cci: '<b>CCI:</b> Identifies new trends and extreme conditions. Very effective in cyclical assets and identifying over-extended trends.',
+                short_rsi: '<b>Inverse RSI Short:</b> Specifically designed to profit from over-hyped "bubbles" when RSI > 70 indicates an overbought reversal.',
+                short_macd: '<b>MACD Bearish Short:</b> Catches the exact moment bullish momentum dies, allowing you to profit from the following price crash.'
             };
-            document.getElementById('strategy-info').innerHTML = (strats[strat] || '') + '<br><br><b>Shorting:</b> Profiting from a price drop. <b>Cover:</b> Closing a short by buying back.';
+            document.getElementById('strategy-info').innerHTML = strats[strat] || '';
         }
 
-        ['crypto-select', 'strategy-select', 'mode-select', 'period-input'].forEach(i => document.getElementById(i).addEventListener('change', run));
-        document.getElementById('balance-input').addEventListener('input', run);
+        ['crypto-select', 'strategy-select', 'mode-select', 'period-input', 'shorting-toggle'].forEach(i => document.getElementById(i).addEventListener('change', () => run(true)));
+        document.getElementById('balance-input').addEventListener('input', () => run(false));
 
-        let gameRunning = false;
+        let gameRunning = false, gameActive = false;
         const cvs = document.getElementById('flappyCanvas'), c = cvs.getContext('2d');
         let bird = { x: 50, y: 150, w: 20, h: 20, g: 0.08, v: 0, jump: -3.0 };
-        let pipes = [], frame = 0, score = 0;
+        let pipes = [], powerups = [], frame = 0, score = 0;
         function toggleGame() {
-            document.getElementById('game-container').style.display = document.getElementById('game-container').style.display === 'block' ? 'none' : 'block';
-            if (document.getElementById('game-container').style.display === 'block') { reset(); gameRunning = true; loop(); } else gameRunning = false;
+            const container = document.getElementById('game-container');
+            if (container.style.display === 'block') { container.style.display = 'none'; gameActive = false; }
+            else { container.style.display = 'block'; gameActive = true; reset(); loop(); }
         }
-        function reset() { bird.y = 150; bird.v = 0; pipes = []; score = 0; frame = 0; }
-        function loop() { if (!gameRunning) return; update(); draw(); frame++; requestAnimationFrame(loop); }
+        function reset() { bird.y = 150; bird.v = 0; pipes = []; powerups = []; score = 0; frame = 0; gameRunning = false; }
+        function loop() { if (!gameActive) return; update(); draw(); if (gameRunning) frame++; requestAnimationFrame(loop); }
         function update() {
+            if (!gameRunning) return;
             bird.v += bird.g; bird.y += bird.v;
             if (bird.y + bird.h > cvs.height || bird.y < 0) { gameRunning = false; return; }
-            if (frame % 180 === 0) { const g = 200, t = Math.random() * (cvs.height - g - 100) + 50; pipes.push({ x: cvs.width, t, b: t + g }); }
+            if (frame % 180 === 0) {
+                const g = 180, t = Math.random() * (cvs.height - g - 100) + 50;
+                pipes.push({ x: cvs.width, t, b: t + g });
+                // Place powerup near the pipes (top or bottom of the gap) for risk/reward
+                if (Math.random() > 0.5) {
+                    const py = Math.random() > 0.5 ? t + 20 : t + g - 20;
+                    powerups.push({ x: cvs.width + 25, y: py, r: 8, collected: false });
+                }
+            }
             pipes.forEach((p, i) => {
-                p.x -= 1.0;
+                p.x -= 1.2;
                 if (bird.x + bird.w > p.x && bird.x < p.x + 50 && (bird.y < p.t || bird.y + bird.h > p.b)) gameRunning = false;
                 if (!p.passed && bird.x > p.x + 50) { score++; p.passed = true; }
                 if (p.x + 50 < 0) pipes.splice(i, 1);
+            });
+            powerups.forEach((p, i) => {
+                p.x -= 1.2;
+                if (!p.collected && Math.hypot(bird.x + bird.w/2 - p.x, bird.y + bird.h/2 - p.y) < p.r + 10) { p.collected = true; score += 5; }
+                if (p.x + p.r < 0) powerups.splice(i, 1);
             });
         }
         function draw() {
             c.clearRect(0,0,cvs.width,cvs.height);
             c.fillStyle = '#f1c40f'; c.fillRect(bird.x, bird.y, bird.w, bird.h);
             c.fillStyle = '#2ecc71'; pipes.forEach(p => { c.fillRect(p.x, 0, 50, p.t); c.fillRect(p.x, p.b, 50, cvs.height - p.b); });
+            c.fillStyle = '#e67e22'; powerups.forEach(p => { if (!p.collected) { c.beginPath(); c.arc(p.x, p.y, p.r, 0, Math.PI*2); c.fill(); } });
             c.fillStyle = '#fff'; c.font = '24px Arial'; c.fillText(`Score: ${score}`, 10, 30);
-            if (!gameRunning) { c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0,0,cvs.width,cvs.height); c.fillStyle = '#fff'; c.fillText('RESTART', 150, 250); }
+            if (!gameRunning) {
+                c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0,0,cvs.width,cvs.height);
+                c.fillStyle = '#fff'; c.textAlign = 'center';
+                c.fillText(frame === 0 ? 'CLICK TO START' : 'GAME OVER - CLICK TO RESTART', cvs.width/2, cvs.height/2);
+                c.textAlign = 'left';
+            }
         }
         cvs.addEventListener('mousedown', () => { if (!gameRunning) { reset(); gameRunning = true; loop(); } else bird.v = bird.jump; });
         window.addEventListener('keydown', e => { if (e.code === 'Space') { if (!gameRunning) { reset(); gameRunning = true; loop(); } else bird.v = bird.jump; e.preventDefault(); } });
