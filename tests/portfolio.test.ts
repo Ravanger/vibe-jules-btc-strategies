@@ -2,49 +2,53 @@ import { Portfolio } from "../src/portfolio.js";
 import type { Signal } from "../src/trading.js";
 
 describe("Portfolio", () => {
-    test("should initialize with correct balance", () => {
-        const p = new Portfolio(1000);
+    test("should initialize with USD goal", () => {
+        const p = new Portfolio(1000, "USD");
         expect(p.cash).toBe(1000);
-        expect(p.btc).toBe(0);
+        expect(p.asset).toBe(0);
+    });
+
+    test("should initialize with ACCUMULATE goal", () => {
+        const p = new Portfolio(1, "ACCUMULATE", 50000);
+        expect(p.asset).toBe(1);
+        expect(p.cash).toBe(0);
+        expect(p.initialValueUSD).toBe(50000);
     });
 
     test("should execute BUY trade", () => {
-        const p = new Portfolio(1000);
+        const p = new Portfolio(1000, "USD");
         const signal: Signal = {
             date: 1,
             price: 100,
-            ma7: 110,
-            ma30: 105,
-            action: "BUY"
+            action: "BUY",
+            reason: "Test Buy"
         };
         p.executeTrade(signal);
         expect(p.cash).toBe(0);
-        expect(p.btc).toBe(10);
-        expect(p.ledger.length).toBe(1);
-        expect(p.ledger[0]?.type).toBe("BUY");
+        expect(p.asset).toBe(10);
+        expect(p.ledger[0].reason).toBe("Test Buy");
     });
 
-    test("should execute SELL trade", () => {
-        const p = new Portfolio(0);
-        p.btc = 10;
-        const signal: Signal = {
-            date: 2,
-            price: 150,
-            ma7: 140,
-            ma30: 145,
-            action: "SELL"
+    test("should execute SHORT and COVER", () => {
+        const p = new Portfolio(1000, "USD");
+        const shortSignal: Signal = {
+            date: 1,
+            price: 100,
+            action: "SHORT",
+            reason: "Test Short"
         };
-        p.executeTrade(signal);
-        expect(p.cash).toBe(1500);
-        expect(p.btc).toBe(0);
-        expect(p.ledger.length).toBe(1);
-        expect(p.ledger[0]?.type).toBe("SELL");
-    });
+        p.executeTrade(shortSignal);
+        expect(p.asset).toBe(-10);
+        expect(p.cash).toBe(2000);
 
-    test("should calculate portfolio value correctly", () => {
-        const p = new Portfolio(500);
-        p.btc = 2;
-        // value = 500 + 2 * 250 = 1000
-        expect(p.getPortfolioValue(250)).toBe(1000);
+        const coverSignal: Signal = {
+            date: 2,
+            price: 50,
+            action: "COVER",
+            reason: "Test Cover"
+        };
+        p.executeTrade(coverSignal);
+        expect(p.asset).toBe(0);
+        expect(p.cash).toBe(1500);
     });
 });
