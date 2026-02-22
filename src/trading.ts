@@ -21,6 +21,9 @@ export interface Signal {
     stochD?: number;
     williamsR?: number;
     cci?: number;
+    sar?: number;
+    up?: number;
+    lo?: number;
 }
 
 /**
@@ -121,6 +124,48 @@ function calculateCCI(prices: number[], period: number = 20): number[] {
     return cci;
 }
 
+function calculateSAR(prices: number[], afStep: number = 0.02, afMax: number = 0.2): number[] {
+    const sar: number[] = new Array(prices.length).fill(NaN);
+    if (prices.length < 2) return sar;
+    let isBull = true;
+    let ep = prices[0];
+    let af = afStep;
+    sar[0] = prices[0];
+    for (let i = 1; i < prices.length; i++) {
+        sar[i] = sar[i - 1] + af * (ep - sar[i - 1]);
+        if (isBull) {
+            if (prices[i] > ep) {
+                ep = prices[i];
+                af = Math.min(af + afStep, afMax);
+            }
+            if (prices[i] < sar[i]) {
+                isBull = false;
+                sar[i] = ep;
+                ep = prices[i];
+                af = afStep;
+            }
+        } else {
+            if (prices[i] < ep) {
+                ep = prices[i];
+                af = Math.min(af + afStep, afMax);
+            }
+            if (prices[i] > sar[i]) {
+                isBull = true;
+                sar[i] = ep;
+                ep = prices[i];
+                af = afStep;
+            }
+        }
+    }
+    return sar;
+}
+
+function calculateDonchian(prices: number[], period: number = 20): { up: number[], lo: number[] } {
+    const up: number[] = prices.map((_, i) => i < period - 1 ? NaN : Math.max(...prices.slice(i - period + 1, i + 1)));
+    const lo: number[] = prices.map((_, i) => i < period - 1 ? NaN : Math.min(...prices.slice(i - period + 1, i + 1)));
+    return { up, lo };
+}
+
 export function getTradingSignals(prices: number[], strategy: string = "golden_cross", allowShorting: boolean = false): Signal[] {
     const signals: Signal[] = [];
 
@@ -214,7 +259,7 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let reason = "";
             if (!isNaN(cci[i]) && !isNaN(cci[i-1])) {
                 if (cci[i-1] <= -100 && cci[i] > -100) { action = "BUY"; reason = "CCI recovered from oversold territory."; }
-                else if (cci[i-1] >= 100 && cci[i] < 100) { action = "SELL"; r = "CCI dropped from overbought territory."; }
+                else if (cci[i-1] >= 100 && cci[i] < 100) { action = "SELL"; reason = "CCI dropped from overbought territory."; }
             }
             signals.push({ date: i, price: prices[i], cci: cci[i], action, reason });
         }
@@ -272,6 +317,57 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
                 else if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "COVER"; reason = "MACD bullish crossover; covering short as trend strengthens."; }
             }
             signals.push({ date: i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
+        }
+    } else if (strategy === "psar") {
+        const sar = calculateSAR(prices);
+        for (let i = 0; i < prices.length; i++) {
+            let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
+            let reason = "";
+            if (!isNaN(sar[i]) && !isNaN(sar[i-1])) {
+                if (prices[i-1] <= sar[i-1] && prices[i] > sar[i]) { action = "BUY"; reason = "Price crossed above Parabolic SAR; trend is now bullish."; }
+                else if (prices[i-1] >= sar[i-1] && prices[i] < sar[i]) { action = "SELL"; reason = "Price crossed below Parabolic SAR; trend is now bearish."; }
+            }
+            signals.push({ date: i, price: prices[i], sar: sar[i], action, reason });
+        }
+    } else if (strategy === "donchian") {
+        const { up, lo } = calculateDonchian(prices);
+        for (let i = 0; i < prices.length; i++) {
+            let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
+            let reason = "";
+            if (!isNaN(up[i]) && !isNaN(lo[i])) {
+                if (prices[i] >= up[i-1]) { action = "BUY"; reason = "Price broke above 20-day high; entering on momentum."; }
+                else if (prices[i] <= lo[i-1]) { action = "SELL"; reason = "Price broke below 20-day low; exiting breakout."; }
+            }
+            signals.push({ date: i, price: prices[i], up: up[i], lo: lo[i], action, reason });
+        }
+    } else if (strategy === "short_bollinger") {
+        const ma20 = rollingMean(prices, 20);
+        const stdDevs = prices.map((p, i) => {
+            if (i < 19) return NaN;
+            const slice = prices.slice(i - 19, i + 1);
+            const mean = ma20[i];
+            return Math.sqrt(slice.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / 20);
+        });
+        const upper = ma20.map((m, i) => m + 2 * stdDevs[i]);
+        for (let i = 0; i < prices.length; i++) {
+            let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
+            let reason = "";
+            if (!isNaN(upper[i])) {
+                if (prices[i] > upper[i]) { action = "SHORT"; reason = "Price hit Upper Bollinger Band; shorting for reversal."; }
+                else if (prices[i] < ma20[i]) { action = "COVER"; reason = "Price returned to mean (MA 20); covering short position."; }
+            }
+            signals.push({ date: i, price: prices[i], ma20: ma20[i], upper: upper[i], action, reason });
+        }
+    } else if (strategy === "short_mean_reversion") {
+        const ma20 = rollingMean(prices, 20);
+        for (let i = 0; i < prices.length; i++) {
+            let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
+            let reason = "";
+            if (!isNaN(ma20[i])) {
+                if (prices[i] > ma20[i] * 1.10) { action = "SHORT"; reason = "Price is 10% above 20-day mean; shorting for reversion."; }
+                else if (prices[i] < ma20[i]) { action = "COVER"; reason = "Price returned to mean; covering short."; }
+            }
+            signals.push({ date: i, price: prices[i], ma20: ma20[i], action, reason });
         }
     }
     return signals;

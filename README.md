@@ -10,10 +10,11 @@ A professional-grade, portable cryptocurrency trading simulator with real-world 
 - **Multi-Crypto Support**: Fetches live data for Top 10 cryptocurrencies (Bitcoin, Ethereum, Solana, etc.) from the [CoinGecko API](https://www.coingecko.com/).
 - **Smart Caching**: Implements a 12-hour local storage cache to minimize API hits and ensure smooth performance.
 - **Advanced Strategies**:
-    - **Trend Following**: Golden Cross (7/30 MA), EMA Cross (12/26), SMA Cross (50/200).
+    - **Trend Following**: Golden Cross (7/30 MA), EMA Cross (12/26), SMA Cross (50/200), Parabolic SAR.
     - **Momentum**: RSI, MACD Momentum, Stochastic Oscillator, Williams %R.
     - **Mean Reversion**: Bollinger Bands, MA 20 Reversion, Commodity Channel Index (CCI).
-    - **Short Strategies**: Inverse RSI and MACD Bearish crossovers to profit from market drops.
+    - **Volatility**: Donchian Channels.
+    - **Short Strategies**: Inverse RSI, MACD Bearish, Short Bollinger, and Short Mean Reversion.
 - **Short Selling & Covering**: Full support for short positions to profit from downward price movements.
 - **Simulation Modes**:
     - **Maximize Dollar Profit**: Optimize for ending with the highest USD value.
@@ -26,7 +27,7 @@ A professional-grade, portable cryptocurrency trading simulator with real-world 
 - **Dark Mode**: Contrast-optimized UI for all light conditions.
 
 ### 📜 Trading Ledger
-- **Detailed Logs**: Every trade is logged with date, price, amount, value, and a **Reason** explaining the strategy signal.
+- **Detailed Logs**: Every trade is logged with date, price, amount, value, **Rolling Balance**, **Rolling Crypto Stack**, and a **Reason** explaining the strategy signal.
 
 ## 🛠️ Setup & Usage
 
@@ -51,7 +52,9 @@ npm test
 ```
 
 ## 📚 Credits & Libraries
-- **Data Source**: [CoinGecko](https://www.coingecko.com/)
+- **Data Source**: [CoinGecko](https://www.coingecko.com/) (Market prices & symbols)
+- **Calculation Engine**: [Danfo.js](https://js.danfo.js.org/) (Data manipulation)
+- **Visualization**: [Chart.js](https://www.chartjs.org/) (Interactive charts)
 - **Developer**: [Google Jules](https://jules.google/)
 
 ---
