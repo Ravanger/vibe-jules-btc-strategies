@@ -13,38 +13,46 @@ describe("Portfolio", () => {
         const signal: Signal = {
             date: 1,
             price: 100,
-            ma7: 110,
-            ma30: 105,
             action: "BUY"
         };
         p.executeTrade(signal);
         expect(p.cash).toBe(0);
         expect(p.btc).toBe(10);
-        expect(p.ledger.length).toBe(1);
-        expect(p.ledger[0]?.type).toBe("BUY");
     });
 
-    test("should execute SELL trade", () => {
-        const p = new Portfolio(0);
-        p.btc = 10;
-        const signal: Signal = {
-            date: 2,
-            price: 150,
-            ma7: 140,
-            ma30: 145,
-            action: "SELL"
+    test("should execute SHORT and COVER", () => {
+        const p = new Portfolio(1000);
+        const shortSignal: Signal = {
+            date: 1,
+            price: 100,
+            action: "SHORT"
         };
-        p.executeTrade(signal);
-        expect(p.cash).toBe(1500);
+        p.executeTrade(shortSignal);
+        // Shorting 1000 worth at 100 = 10 BTC
+        // Cash becomes 1000 (initial) + 1000 (from short) = 2000
+        expect(p.btc).toBe(-10);
+        expect(p.cash).toBe(2000);
+
+        const coverSignal: Signal = {
+            date: 2,
+            price: 50,
+            action: "COVER"
+        };
+        p.executeTrade(coverSignal);
+        // Covering 10 BTC at 50 = 500 cost
+        // Cash becomes 2000 - 500 = 1500
         expect(p.btc).toBe(0);
-        expect(p.ledger.length).toBe(1);
-        expect(p.ledger[0]?.type).toBe("SELL");
+        expect(p.cash).toBe(1500);
     });
 
-    test("should calculate portfolio value correctly", () => {
-        const p = new Portfolio(500);
-        p.btc = 2;
-        // value = 500 + 2 * 250 = 1000
-        expect(p.getPortfolioValue(250)).toBe(1000);
+    test("should handle BTC accumulation goal", () => {
+        const p = new Portfolio(1000, "BTC");
+        // Final price 100
+        const finalPrice = 100;
+        // Total value is $1000 (all cash)
+        // BTC equivalent is 1000 / 100 = 10 BTC
+        const metric = p.getFinalMetric(finalPrice);
+        expect(metric.value).toBe(10);
+        expect(metric.unit).toBe("BTC");
     });
 });

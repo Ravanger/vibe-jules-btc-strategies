@@ -10,8 +10,8 @@ export async function runFlappyBird(): Promise<void> {
         let score = 0;
         let gameOver = false;
 
-        const gravity = 0.25;
-        const jumpStrength = -1.0;
+        const gravity = 0.15;
+        const jumpStrength = -0.7;
 
         process.stdin.setRawMode(true);
         process.stdin.resume();
