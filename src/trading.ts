@@ -131,8 +131,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(ma7[i]) && !isNaN(ma30[i]) && !isNaN(ma7[i-1]) && !isNaN(ma30[i-1])) {
-                if (ma7[i-1] <= ma30[i-1] && ma7[i] > ma30[i]) { action = "BUY"; reason = "MA 7 crossed above MA 30"; }
-                else if (ma7[i-1] >= ma30[i-1] && ma7[i] < ma30[i]) { action = "SELL"; reason = "MA 7 crossed below MA 30"; }
+                if (ma7[i-1] <= ma30[i-1] && ma7[i] > ma30[i]) { action = "BUY"; reason = "Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend."; }
+                else if (ma7[i-1] >= ma30[i-1] && ma7[i] < ma30[i]) { action = "SELL"; reason = "Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal."; }
             }
             signals.push({ date: i, price: prices[i], ma7: ma7[i], ma30: ma30[i], action, reason });
         }
@@ -143,8 +143,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(e12[i]) && !isNaN(e26[i]) && !isNaN(e12[i-1]) && !isNaN(e26[i-1])) {
-                if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { action = "BUY"; reason = "EMA 12 crossed above EMA 26"; }
-                else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { action = "SELL"; reason = "EMA 12 crossed below EMA 26"; }
+                if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { action = "BUY"; reason = "EMA 12 crossed above EMA 26; entering on momentum shift."; }
+                else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { action = "SELL"; reason = "EMA 12 crossed below EMA 26; exiting as momentum fades."; }
             }
             signals.push({ date: i, price: prices[i], ema12: e12[i], ema26: e26[i], action, reason });
         }
@@ -155,8 +155,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(s50[i]) && !isNaN(s200[i]) && !isNaN(s50[i-1]) && !isNaN(s200[i-1])) {
-                if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { action = "BUY"; reason = "SMA 50 crossed above SMA 200"; }
-                else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { action = "SELL"; reason = "SMA 50 crossed below SMA 200"; }
+                if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { action = "BUY"; reason = "SMA 50 crossed above SMA 200; major 'Golden Cross' detected."; }
+                else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { action = "SELL"; reason = "SMA 50 crossed below SMA 200; major 'Death Cross' detected."; }
             }
             signals.push({ date: i, price: prices[i], sma50: s50[i], sma200: s200[i], action, reason });
         }
@@ -166,8 +166,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(rsi[i]) && !isNaN(rsi[i-1])) {
-                if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "BUY"; reason = "RSI recovering from oversold (<30)"; }
-                else if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SELL"; reason = "RSI falling from overbought (>70)"; }
+                if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "BUY"; reason = "RSI recovered from oversold (<30); buying the dip."; }
+                else if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SELL"; reason = "RSI dropped from overbought (>70); profit taking."; }
             }
             signals.push({ date: i, price: prices[i], rsi: rsi[i], action, reason });
         }
@@ -180,8 +180,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(macdLine[i]) && !isNaN(signalLine[i]) && !isNaN(macdLine[i-1]) && !isNaN(signalLine[i-1])) {
-                if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "BUY"; reason = "MACD Bullish crossover"; }
-                else if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SELL"; reason = "MACD Bearish crossover"; }
+                if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "BUY"; reason = "MACD bullish crossover above signal line."; }
+                else if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SELL"; reason = "MACD bearish crossover below signal line."; }
             }
             signals.push({ date: i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
         }
@@ -191,8 +191,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(k[i]) && !isNaN(d[i]) && !isNaN(k[i-1]) && !isNaN(d[i-1])) {
-                if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { action = "BUY"; reason = "Stoch Bullish crossover in oversold"; }
-                else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { action = "SELL"; reason = "Stoch Bearish crossover in overbought"; }
+                if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { action = "BUY"; reason = "Stochastic Bullish crossover in oversold region."; }
+                else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { action = "SELL"; reason = "Stochastic Bearish crossover in overbought region."; }
             }
             signals.push({ date: i, price: prices[i], stochK: k[i], stochD: d[i], action, reason });
         }
@@ -202,8 +202,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(r[i]) && !isNaN(r[i-1])) {
-                if (r[i-1] <= -80 && r[i] > -80) { action = "BUY"; reason = "Williams %R recovered from oversold"; }
-                else if (r[i-1] >= -20 && r[i] < -20) { action = "SELL"; reason = "Williams %R dropped from overbought"; }
+                if (r[i-1] <= -80 && r[i] > -80) { action = "BUY"; reason = "Williams %R recovered from extreme oversold."; }
+                else if (r[i-1] >= -20 && r[i] < -20) { action = "SELL"; reason = "Williams %R dropped from extreme overbought."; }
             }
             signals.push({ date: i, price: prices[i], williamsR: r[i], action, reason });
         }
@@ -213,8 +213,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(cci[i]) && !isNaN(cci[i-1])) {
-                if (cci[i-1] <= -100 && cci[i] > -100) { action = "BUY"; reason = "CCI crossed above -100 (Emerging from oversold)"; }
-                else if (cci[i-1] >= 100 && cci[i] < 100) { action = "SELL"; reason = "CCI crossed below 100 (Emerging from overbought)"; }
+                if (cci[i-1] <= -100 && cci[i] > -100) { action = "BUY"; reason = "CCI recovered from oversold territory."; }
+                else if (cci[i-1] >= 100 && cci[i] < 100) { action = "SELL"; r = "CCI dropped from overbought territory."; }
             }
             signals.push({ date: i, price: prices[i], cci: cci[i], action, reason });
         }
@@ -232,8 +232,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(lower[i]) && !isNaN(upper[i])) {
-                if (prices[i] < lower[i]) { action = "BUY"; reason = "Price below lower Bollinger Band"; }
-                else if (prices[i] > upper[i]) { action = "SELL"; reason = "Price above upper Bollinger Band"; }
+                if (prices[i] < lower[i]) { action = "BUY"; reason = "Price broke below Lower Bollinger Band; expecting bounce."; }
+                else if (prices[i] > upper[i]) { action = "SELL"; reason = "Price broke above Upper Bollinger Band; expecting reversal."; }
             }
             signals.push({ date: i, price: prices[i], ma20: ma20[i], upper: upper[i], lower: lower[i], action, reason });
         }
@@ -243,8 +243,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(ma20[i])) {
-                if (prices[i] < ma20[i] * 0.95) { action = "BUY"; reason = "Price 5% below 20-day MA"; }
-                else if (prices[i] > ma20[i] * 1.05) { action = "SELL"; reason = "Price 5% above 20-day MA"; }
+                if (prices[i] < ma20[i] * 0.95) { action = "BUY"; reason = "Price is 5% below 20-day mean; buying for reversion."; }
+                else if (prices[i] > ma20[i] * 1.05) { action = "SELL"; reason = "Price is 5% above 20-day mean; selling for reversion."; }
             }
             signals.push({ date: i, price: prices[i], ma20: ma20[i], action, reason });
         }
@@ -254,8 +254,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(rsi[i]) && !isNaN(rsi[i-1])) {
-                if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SHORT"; reason = "RSI falling from overbought - Entering Short"; }
-                else if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "COVER"; reason = "RSI recovering from oversold - Covering Short"; }
+                if (rsi[i-1] >= 70 && rsi[i] < 70) { action = "SHORT"; reason = "RSI dropped from overbought (>70); entering short position."; }
+                else if (rsi[i-1] <= 30 && rsi[i] > 30) { action = "COVER"; reason = "RSI recovered from oversold (<30); covering short position."; }
             }
             signals.push({ date: i, price: prices[i], rsi: rsi[i], action, reason });
         }
@@ -268,8 +268,8 @@ export function getTradingSignals(prices: number[], strategy: string = "golden_c
             let action: "BUY" | "SELL" | "HOLD" | "SHORT" | "COVER" = "HOLD";
             let reason = "";
             if (!isNaN(macdLine[i]) && !isNaN(signalLine[i]) && !isNaN(macdLine[i-1]) && !isNaN(signalLine[i-1])) {
-                if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SHORT"; reason = "MACD Bearish crossover - Entering Short"; }
-                else if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "COVER"; reason = "MACD Bullish crossover - Covering Short"; }
+                if (macdLine[i-1] >= signalLine[i-1] && macdLine[i] < signalLine[i]) { action = "SHORT"; reason = "MACD bearish crossover; entering short as trend weakens."; }
+                else if (macdLine[i-1] <= signalLine[i-1] && macdLine[i] > signalLine[i]) { action = "COVER"; reason = "MACD bullish crossover; covering short as trend strengthens."; }
             }
             signals.push({ date: i, price: prices[i], macd: macdLine[i], signal: signalLine[i], action, reason });
         }

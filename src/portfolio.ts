@@ -24,14 +24,13 @@ export class Portfolio {
         this.goal = goal;
         this.ledger = [];
 
+        this.initialValueUSD = initialBalance;
         if (goal === "ACCUMULATE") {
-            this.asset = initialBalance;
+            this.asset = initialBalance / startPrice;
             this.cash = 0;
-            this.initialValueUSD = initialBalance * startPrice;
         } else {
             this.cash = initialBalance;
             this.asset = 0;
-            this.initialValueUSD = initialBalance;
         }
     }
 
