@@ -1,35 +1,32 @@
-# Bitcoin Trading Simulator & Flappy Bird
+# Crypto Trading Simulator
 
-A professional-grade, portable Bitcoin trading simulator with real-world data integration, multiple technical strategies, and a hidden Flappy Bird easter egg.
+A professional-grade, portable cryptocurrency trading simulator with real-world data integration, multiple technical strategies, and portfolio optimization modes.
 
-![Bitcoin Trading Simulator](btc_sim_latest.png)
+![Crypto Trading Simulator](btc_sim_latest.png)
 
 ## 🚀 Features
 
 ### 📊 Trading Simulation
-- **Real-World Data**: Fetches live Bitcoin prices from the [CoinGecko API](https://www.coingecko.com/).
+- **Multi-Crypto Support**: Fetches live data for Top 10 cryptocurrencies (Bitcoin, Ethereum, Solana, etc.) from the [CoinGecko API](https://www.coingecko.com/).
 - **Smart Caching**: Implements a 12-hour local storage cache to minimize API hits and ensure smooth performance.
-- **Multiple Strategies**:
-  - **Golden Cross**: 7/30 Moving Average crossover.
-  - **RSI (Relative Strength Index)**: Momentum-based oversold/overbought signals.
-  - **MACD**: Trend-following momentum indicator.
-  - **Bollinger Bands**: Volatility-based support and resistance levels.
-  - **Mean Reversion**: Betting on price returning to its 20-day average.
-  - **EMA Cross**: Faster responding Exponential Moving Average crossover (12/26).
-  - **SMA Cross**: The classic 50/200 Day "Death/Golden Cross".
-- **Short Selling**: Ability to toggle shorting to profit from downward price movements.
-- **Portfolio Goals**:
-  - **Maximize USD Profit**: Goal is to end with the highest dollar value.
-  - **Stack Bitcoin**: Goal is to accumulate the maximum amount of BTC (Accumulation mode).
+- **Advanced Strategies**:
+    - **Trend Following**: Golden Cross (7/30 MA), EMA Cross (12/26), SMA Cross (50/200).
+    - **Momentum**: RSI, MACD Momentum, Stochastic Oscillator, Williams %R.
+    - **Mean Reversion**: Bollinger Bands, MA 20 Reversion, Commodity Channel Index (CCI).
+    - **Short Strategies**: Inverse RSI and MACD Bearish crossovers to profit from market drops.
+- **Short Selling & Covering**: Full support for short positions to profit from downward price movements.
+- **Simulation Modes**:
+    - **Maximize Dollar Profit**: Optimize for ending with the highest USD value.
+    - **Stack Assets (Accumulation)**: Optimize for accumulating the maximum amount of the selected cryptocurrency.
 
 ### 📈 Visualization
 - **Interactive Graphing**: Full-width interactive chart powered by [Chart.js](https://www.chartjs.org/).
-- **Indicator Overlays**: View all strategy-specific signals (RSI, MACD lines, Moving Averages, Bollinger Bands) directly on the price chart.
-- **Buy/Sell Markers**: Clear visual markers for entry (Buy/Cover) and exit (Sell/Short) points.
-- **Dark Mode**: Fully themed UI with a contrast-optimized Dark Mode for late-night analysis.
+- **Technical Indicators**: Visual overlays for Moving Averages, RSI, MACD, and Bollinger Bands.
+- **Trade Markers**: Clear visual markers for Long Entry (BUY), Long Exit (SELL), Short Entry (SHORT), and Short Exit (COVER).
+- **Dark Mode**: Contrast-optimized UI for all light conditions.
 
-### 🎮 Easter Egg
-- **Flappy Bird**: A hidden, physics-adjusted Flappy Bird game to pass the time while the "market" moves. Slowed down for a more relaxing (and playable) experience.
+### 📜 Trading Ledger
+- **Detailed Logs**: Every trade is logged with date, price, amount, value, and a **Reason** explaining the strategy signal.
 
 ## 🛠️ Setup & Usage
 
@@ -37,8 +34,6 @@ A professional-grade, portable Bitcoin trading simulator with real-world data in
 Simply open `index.html` in any modern web browser. No server required!
 
 ### CLI Version
-If you have Node.js installed, you can run the simulation in your terminal:
-
 1. **Install Dependencies**:
    ```bash
    npm install
@@ -49,23 +44,15 @@ If you have Node.js installed, you can run the simulation in your terminal:
    npm start
    ```
 
-3. **Play Flappy Bird**:
-   ```bash
-   npm start -- --flappy
-   ```
-
 ## 🧪 Testing
-The project includes a comprehensive Jest test suite to ensure the accuracy of trading signals and portfolio calculations.
-
+Run the comprehensive test suite with:
 ```bash
 npm test
 ```
 
 ## 📚 Credits & Libraries
 - **Data Source**: [CoinGecko](https://www.coingecko.com/)
-- **Analysis**: [Danfo.js](https://danfo.jsdata.org/)
-- **Charts**: [Chart.js](https://www.chartjs.org/)
-- **Developer**: Google Jules
+- **Developer**: [Google Jules](https://github.com/GoogleJules)
 
 ---
 *Disclaimer: This is a simulator for educational and entertainment purposes only. Past performance does not guarantee future results.*
