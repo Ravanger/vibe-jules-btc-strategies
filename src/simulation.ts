@@ -4,7 +4,7 @@ const CACHE_FILE = '.btc_price_cache.json';
 const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
 /**
- * Simulates Cryptocurrency price data using real data from CoinCap.
+ * Simulates Cryptocurrency price data using real data from CoinGecko.
  */
 export async function fetchBitcoinData(): Promise<{timestamp: number, price: number}[]> {
     if (fs.existsSync(CACHE_FILE)) {
@@ -16,12 +16,12 @@ export async function fetchBitcoinData(): Promise<{timestamp: number, price: num
         }
     }
     try {
-        const response = await fetch('https://api.coincap.io/v2/assets/bitcoin/history?interval=d1');
+        const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily');
         if (!response.ok) throw new Error('Network response was not ok');
         const data: any = await response.json();
-        const prices = data.data.map((d: any) => ({
-            timestamp: d.time,
-            price: parseFloat(d.priceUsd)
+        const prices = data.prices.map((p: any) => ({
+            timestamp: p[0],
+            price: p[1]
         }));
         fs.writeFileSync(CACHE_FILE, JSON.stringify(prices));
         return prices;

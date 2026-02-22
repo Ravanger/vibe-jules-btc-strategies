@@ -14,6 +14,14 @@ describe("Trading Logic", () => {
         expect(signals[signals.length - 1]).toHaveProperty("stochK");
     });
 
+    test("should calculate signals for golden_cross", () => {
+        const prices = Array.from({ length: 60 }, (_, i) => 100 + i);
+        const signals = getTradingSignals(prices, "golden_cross");
+        expect(signals.length).toBe(60);
+        expect(signals[signals.length - 1]).toHaveProperty("ma7");
+        expect(signals[signals.length - 1]).toHaveProperty("ma30");
+    });
+
     test("should include reasons in signals", () => {
         const prices = [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 90, 80, 70, 60, 50, 40, 30, 20, 10];
         const signals = getTradingSignals(prices, "rsi");

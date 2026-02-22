@@ -1,6 +1,7 @@
 import { fetchBitcoinData } from "./simulation.js";
 import { getTradingSignals } from "./trading.js";
-import { Portfolio, PortfolioGoal } from "./portfolio.js";
+import { Portfolio } from "./portfolio.js";
+import type { PortfolioGoal } from "./portfolio.js";
 import { runFlappyBird } from "./easterEgg.js";
 
 async function main() {
@@ -13,7 +14,7 @@ async function main() {
 
     const strategyArg = args.find(a => a.startsWith("--strategy="))?.split("=")[1] || "golden_cross";
     const goalArg = args.find(a => a.startsWith("--goal="))?.split("=")[1] as PortfolioGoal || "USD";
-    const daysArg = parseInt(args.find(a => a.startsWith("--days="))?.split("=")[1] || "60");
+    const daysArg = parseInt(args.find(a => a.startsWith("--days="))?.split("=")[1] || "360");
 
     console.log(`Starting Crypto Trading Strategies Simulation (${daysArg} Days)...`);
     

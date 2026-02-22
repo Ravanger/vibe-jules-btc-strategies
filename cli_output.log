@@ -1,0 +1,35 @@
+
+> app@1.0.0 start
+> tsx src/index.ts
+
+2026-02-22 10:20:34.913417: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+Starting Crypto Trading Strategies Simulation (360 Days)...
+
+Results for Strategy: golden_cross, Goal: USD
+Initial Value: $100000.00
+Final Portfolio Value: $95311.79
+Total Profit/Loss: $-4688.21 (-4.69%)
+Final Metric (USD): 95311.7874 $
+
+--- Trading Ledger ---
+Date 3/26/2025: BUY   at $87520.58  | Amount: 1.1426   | Value: $100000.00  | Bal($): $0.00       | Stack: 1.1426 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 4/1/2025: SELL  at $82514.09  | Amount: 1.1426   | Value: $94279.64   | Bal($): $94279.64   | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 4/18/2025: BUY   at $84930.91  | Amount: 1.1101   | Value: $94279.64   | Bal($): $0.00       | Stack: 1.1101 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 6/5/2025: SELL  at $104812.92 | Amount: 1.1101   | Value: $116350.16  | Bal($): $116350.16  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 6/12/2025: BUY   at $108679.98 | Amount: 1.0706   | Value: $116350.16  | Bal($): $0.00       | Stack: 1.0706 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 6/18/2025: SELL  at $104683.42 | Amount: 1.0706   | Value: $112071.54  | Bal($): $112071.54  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 6/29/2025: BUY   at $107331.59 | Amount: 1.0442   | Value: $112071.54  | Bal($): $0.00       | Stack: 1.0442 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 8/4/2025: SELL  at $114199.11 | Amount: 1.0442   | Value: $119242.35  | Bal($): $119242.35  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 8/13/2025: BUY   at $120202.53 | Amount: 0.9920   | Value: $119242.35  | Bal($): $0.00       | Stack: 0.9920 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 8/21/2025: SELL  at $114252.40 | Amount: 0.9920   | Value: $113339.74  | Bal($): $113339.74  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 9/13/2025: BUY   at $116160.14 | Amount: 0.9757   | Value: $113339.74  | Bal($): $0.00       | Stack: 0.9757 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 9/27/2025: SELL  at $109710.21 | Amount: 0.9757   | Value: $107046.42  | Bal($): $107046.42  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 10/3/2025: BUY   at $120611.72 | Amount: 0.8875   | Value: $107046.42  | Bal($): $0.00       | Stack: 0.8875 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 10/15/2025: SELL  at $113156.57 | Amount: 0.8875   | Value: $100429.75  | Bal($): $100429.75  | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 12/13/2025: BUY   at $90307.26  | Amount: 1.1121   | Value: $100429.75  | Bal($): $0.00       | Stack: 1.1121 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 12/17/2025: SELL  at $87821.89  | Amount: 1.1121   | Value: $97665.80   | Bal($): $97665.80   | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+Date 1/5/2026: BUY   at $91373.22  | Amount: 1.0689   | Value: $97665.80   | Bal($): $0.00       | Stack: 1.0689 | Reason: Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend.
+Date 1/25/2026: SELL  at $89170.87  | Amount: 1.0689   | Value: $95311.79   | Bal($): $95311.79   | Stack: 0.0000 | Reason: Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal.
+
+Tip: Run with --flappy to play the easter egg game!
