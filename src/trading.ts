@@ -77,6 +77,7 @@ function calculateRSI(prices: number[], period: number = 14): number[] {
 
 /**
  * Calculates trading signals based on various strategies.
+ *
  * 
  * @param prices Array of daily prices.
  * @param strategy The strategy to use.

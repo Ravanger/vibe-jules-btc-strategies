@@ -1,36 +1,26 @@
 /**
- * Generates random numbers with a normal distribution using the Box-Muller transform.
+ * Simulates Bitcoin price data using real data from CoinGecko.
  */
-export function randn(): number {
-    let u = 0, v = 0;
-    while (u === 0) u = Math.random();
-    while (v === 0) v = Math.random();
-    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+
+export async function fetchBitcoinData(): Promise<{timestamp: number, price: number}[]> {
+    try {
+        const response = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data: any = await response.json();
+        return data.prices.map((d: any) => ({
+            timestamp: d[0],
+            price: d[1]
+        }));
+    } catch (error) {
+        console.error("Failed to fetch Bitcoin data:", error);
+        return [];
+    }
 }
 
 /**
- * Simulates Bitcoin price data using Geometric Brownian Motion.
- * 
- * @param days Number of days to simulate.
- * @param initialPrice The starting price.
- * @param drift Daily drift (expected return).
- * @param volatility Daily volatility.
- * @returns An array of simulated daily prices.
+ * @deprecated GBM is no longer used. Use fetchBitcoinData instead.
  */
-export function generatePrices(
-    days: number,
-    initialPrice: number = 60000,
-    drift: number = 0.0005,
-    volatility: number = 0.05
-): number[] {
-    const prices: number[] = [initialPrice];
-    let currentPrice = initialPrice;
-
-    for (let i = 1; i < days; i++) {
-        const shock = drift - 0.5 * Math.pow(volatility, 2) + volatility * randn();
-        currentPrice = currentPrice * Math.exp(shock);
-        prices.push(currentPrice);
-    }
-
-    return prices;
+export function generatePrices(days: number): number[] {
+    console.warn("generatePrices (GBM) is deprecated. Use fetchBitcoinData.");
+    return new Array(days).fill(60000);
 }
