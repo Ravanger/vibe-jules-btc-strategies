@@ -1,83 +1,96 @@
 import type { Signal } from "./trading.js";
 
 export interface Trade {
-    day: number;
-    type: "BUY" | "SELL" | "SHORT" | "COVER";
+    date: number;
+    action: "BUY" | "SELL" | "SHORT" | "COVER";
     price: number;
     amount: number;
     value: number;
+    reason?: string;
 }
 
-export type PortfolioGoal = "USD" | "BTC";
+export type PortfolioGoal = "USD" | "ACCUMULATE";
 
 export class Portfolio {
     cash: number;
-    btc: number;
+    asset: number;
     ledger: Trade[];
     initialBalance: number;
+    initialValueUSD: number;
     goal: PortfolioGoal;
 
-    constructor(initialBalance: number = 100000, goal: PortfolioGoal = "USD") {
-        this.cash = initialBalance;
+    constructor(initialBalance: number = 100000, goal: PortfolioGoal = "USD", startPrice: number = 0) {
         this.initialBalance = initialBalance;
-        this.btc = 0;
-        this.ledger = [];
         this.goal = goal;
+        this.ledger = [];
+
+        if (goal === "ACCUMULATE") {
+            this.asset = initialBalance;
+            this.cash = 0;
+            this.initialValueUSD = initialBalance * startPrice;
+        } else {
+            this.cash = initialBalance;
+            this.asset = 0;
+            this.initialValueUSD = initialBalance;
+        }
     }
 
     executeTrade(signal: Signal) {
         const action = signal.action;
         const price = signal.price;
+        const reason = signal.reason;
 
         if (action === "BUY") {
-            if (this.btc < 0) this.coverShort(price, signal.date);
+            if (this.asset < 0) this.coverShort(price, signal.date, "Auto-covering for buy");
             if (this.cash > 0) {
                 const amountToBuy = this.cash / price;
-                this.ledger.push({ day: signal.date, type: "BUY", price, amount: amountToBuy, value: this.cash });
-                this.btc += amountToBuy; this.cash = 0;
+                this.ledger.push({ date: signal.date, action: "BUY", price, amount: amountToBuy, value: this.cash, reason });
+                this.asset += amountToBuy; this.cash = 0;
             }
         } else if (action === "SELL") {
-            if (this.btc > 0) {
-                const tradeValue = this.btc * price;
-                this.ledger.push({ day: signal.date, type: "SELL", price, amount: this.btc, value: tradeValue });
-                this.cash += tradeValue; this.btc = 0;
+            if (this.asset > 0) {
+                const tradeValue = this.asset * price;
+                this.ledger.push({ date: signal.date, action: "SELL", price, amount: this.asset, value: tradeValue, reason });
+                this.cash += tradeValue; this.asset = 0;
             }
         } else if (action === "SHORT") {
-            if (this.btc > 0) this.executeTrade({ ...signal, action: "SELL" });
-            if (this.btc === 0 && this.cash > 0) {
+            if (this.asset > 0) this.executeTrade({ ...signal, action: "SELL", reason: "Closing long before shorting" });
+            if (this.asset === 0 && this.cash > 0) {
                 const amountToShort = this.cash / price;
-                this.ledger.push({ day: signal.date, type: "SHORT", price, amount: amountToShort, value: this.cash });
-                this.cash += this.cash; this.btc -= amountToShort;
+                this.ledger.push({ date: signal.date, action: "SHORT", price, amount: amountToShort, value: this.cash, reason });
+                this.cash += this.cash; // Collateralized
+                this.asset -= amountToShort;
             }
         } else if (action === "COVER") {
-            this.coverShort(price, signal.date);
+            this.coverShort(price, signal.date, reason);
         }
     }
 
-    private coverShort(price: number, day: number) {
-        if (this.btc < 0) {
-            const amountToCover = Math.abs(this.btc);
+    private coverShort(price: number, date: number, reason?: string) {
+        if (this.asset < 0) {
+            const amountToCover = Math.abs(this.asset);
             const costToCover = amountToCover * price;
-            this.ledger.push({ day: day, type: "COVER", price: price, amount: amountToCover, value: costToCover });
-            this.cash -= costToCover; this.btc = 0;
+            this.ledger.push({ date, action: "COVER", price: price, amount: amountToCover, value: costToCover, reason });
+            this.cash -= costToCover;
+            this.asset = 0;
         }
     }
 
     getPortfolioValue(currentPrice: number): number {
-        return this.cash + this.btc * currentPrice;
+        return this.cash + this.asset * currentPrice;
     }
 
     getFinalMetric(finalPrice: number): { value: number, unit: string } {
         const totalValueUSD = this.getPortfolioValue(finalPrice);
-        if (this.goal === "BTC") return { value: totalValueUSD / finalPrice, unit: "BTC" };
+        if (this.goal === "ACCUMULATE") return { value: totalValueUSD / finalPrice, unit: "Assets" };
         return { value: totalValueUSD, unit: "$" };
     }
 
     printPerformance(finalPrice: number) {
         const finalValue = this.getPortfolioValue(finalPrice);
-        const profit = finalValue - this.initialBalance;
-        const returnPct = (profit / this.initialBalance) * 100;
-        console.log(`Initial Balance: $${this.initialBalance.toFixed(2)}`);
+        const profit = finalValue - this.initialValueUSD;
+        const returnPct = (profit / this.initialValueUSD) * 100;
+        console.log(`Initial Value: $${this.initialValueUSD.toFixed(2)}`);
         console.log(`Final Portfolio Value: $${finalValue.toFixed(2)}`);
         console.log(`Total Profit/Loss: $${profit.toFixed(2)} (${returnPct.toFixed(2)}%)`);
     }
@@ -85,7 +98,7 @@ export class Portfolio {
     printLedger() {
         console.log("\n--- Trading Ledger ---");
         this.ledger.forEach(t => {
-            console.log(`Day ${t.day}: ${t.type.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2)}`);
+            console.log(`Date ${t.date}: ${t.action.padEnd(5)} at $${t.price.toFixed(2).padEnd(9)} | Amount: ${t.amount.toFixed(4).padEnd(8)} | Value: $${t.value.toFixed(2)} | Reason: ${t.reason}`);
         });
     }
 }
