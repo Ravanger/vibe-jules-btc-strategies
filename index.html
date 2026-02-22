@@ -3,91 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Trading Simulator & Flappy Bird</title>
+    <title>Crypto Trading Strategies Simulation</title>
     <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --container-bg: white;
+            --card-bg: #ecf0f1;
+            --header-color: #2c3e50;
+            --table-header-bg: #3498db;
+            --table-row-hover: #f1f1f1;
+            --table-border: #ddd;
+            --accent-color: #3498db;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f4f4f4;
+            --container-bg: #2d2d2d;
+            --card-bg: #3d3d3d;
+            --header-color: #ecf0f1;
+            --table-header-bg: #2980b9;
+            --table-row-hover: #3d3d3d;
+            --table-border: #444;
+            --accent-color: #5dade2;
+        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
-        h1, h2 {
-            color: #2c3e50;
-        }
+        h1, h2 { color: var(--header-color); }
         .container {
-            max-width: 1000px;
+            max-width: 1300px;
+            width: 100%;
             margin: auto;
-            background: white;
+            background: var(--container-bg);
             padding: 20px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             border-radius: 8px;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .theme-toggle {
+            position: absolute; top: 20px; right: 20px; background: none; border: none;
+            cursor: pointer; font-size: 24px; color: var(--text-color);
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 50%; transition: background 0.3s;
+        }
+        .theme-toggle:hover { background: var(--card-bg); }
+        .theme-toggle svg { width: 24px; height: 24px; fill: currentColor; }
+        .controls {
+            display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;
+            margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        select, input {
+            padding: 8px; border-radius: 5px; background: var(--container-bg);
+            color: var(--text-color); border: 1px solid var(--table-border);
         }
         .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px; margin-bottom: 20px;
         }
-        .stat-card {
-            background: #ecf0f1;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #3498db;
-            color: white;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        #game-container {
-            display: none;
-            text-align: center;
-            margin-top: 40px;
-        }
-        canvas {
-            border: 2px solid #333;
-            background-color: #70c5ce;
-            display: block;
-            margin: 20px auto;
-        }
+        .stat-card { background: var(--card-bg); padding: 15px; border-radius: 5px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--table-border); }
+        th { background-color: var(--table-header-bg); color: white; }
+        tr:hover { background-color: var(--table-row-hover); }
+        #chart-wrapper { width: 100%; height: 500px; margin: 20px 0; }
+        #game-container { display: none; text-align: center; margin-top: 40px; }
+        #flappyCanvas { border: 2px solid #333; background-color: #70c5ce; display: block; margin: 20px auto; }
         .btn {
-            background-color: #27ae60;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+            background-color: #27ae60; color: white; padding: 10px 20px; border: none;
+            border-radius: 5px; cursor: pointer; font-size: 16px;
         }
-        .btn:hover {
-            background-color: #2ecc71;
-        }
-        .btn-secret {
-            background-color: #e74c3c;
-            margin-top: 20px;
-        }
+        .btn:hover { background-color: #2ecc71; }
+        .btn-secret { background-color: #e74c3c; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Bitcoin Trading Simulation (60 Days)</h1>
-        <p>This simulation uses Geometric Brownian Motion and a Golden Cross (7/30 MA) strategy.</p>
-        
+        <button class="theme-toggle" id="theme-toggle" title="Toggle Dark Mode">
+            <svg id="theme-icon" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+        </button>
+        <h1 style="margin-bottom: 5px;">Crypto Trading Strategies Simulation</h1>
+        <p id="mode-indicator" style="margin-top: 0; margin-bottom: 20px; font-weight: bold; color: var(--accent-color);"></p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="crypto-select">Cryptocurrency:</label>
+                <select id="crypto-select">
+                    <option value="bitcoin">Bitcoin (BTC)</option>
+                    <option value="ethereum">Ethereum (ETH)</option>
+                    <option value="binancecoin">BNB</option>
+                    <option value="solana">Solana (SOL)</option>
+                    <option value="ripple">XRP</option>
+                    <option value="dogecoin">Dogecoin (DOGE)</option>
+                    <option value="cardano">Cardano (ADA)</option>
+                    <option value="avalanche-2">Avalanche (AVAX)</option>
+                    <option value="tron">TRON (TRX)</option>
+                    <option value="polkadot">Polkadot (DOT)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="strategy-select">Strategy:</label>
+                <select id="strategy-select">
+                    <optgroup label="Trend Following (Long)">
+                        <option value="golden_cross">Golden Cross (7/30 MA)</option>
+                        <option value="ema_cross">EMA Cross (12/26)</option>
+                        <option value="sma_cross">SMA Cross (50/200)</option>
+                        <option value="psar">Parabolic SAR</option>
+                    </optgroup>
+                    <optgroup label="Momentum (Long)">
+                        <option value="rsi">RSI (Relative Strength Index)</option>
+                        <option value="macd">MACD Momentum</option>
+                        <option value="stochastic">Stochastic Oscillator</option>
+                        <option value="williams_r">Williams %R</option>
+                    </optgroup>
+                    <optgroup label="Mean Reversion (Long)">
+                        <option value="bollinger">Bollinger Bands</option>
+                        <option value="mean_reversion">Mean Reversion (MA 20)</option>
+                        <option value="cci">Commodity Channel Index (CCI)</option>
+                    </optgroup>
+                    <optgroup label="Volatility (Breakout)">
+                        <option value="donchian">Donchian Channels</option>
+                    </optgroup>
+                    <optgroup label="Short Strategies (Profit from Drops)">
+                        <option value="short_rsi">Inverse RSI Short</option>
+                        <option value="short_macd">MACD Bearish Short</option>
+                        <option value="short_bollinger">Short Bollinger Band</option>
+                        <option value="short_mean_reversion">Short Mean Reversion</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="mode-select">Simulation Mode:</label>
+                <select id="mode-select">
+                    <option value="USD">Maximize Dollar Profit ($)</option>
+                    <option value="ACCUMULATE">Stack Assets (Accumulation)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="period-input">Period (Days):</label>
+                <input type="number" id="period-input" value="360" min="10" max="500">
+            </div>
+            <div class="control-group">
+                <label for="balance-input" id="balance-label">Initial Balance ($):</label>
+                <input type="number" id="balance-input" value="100000" min="0.00001">
+            </div>
+            <div class="control-group" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <input type="checkbox" id="shorting-toggle" style="width: 20px; height: 20px;">
+                <label for="shorting-toggle" style="font-weight: bold;">Enable Shorting</label>
+            </div>
+        </div>
+
+        <div id="strategy-info" style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 5px; font-size: 0.9em;">
+            <!-- Strategy summary will be injected here -->
+        </div>
+
         <div id="performance-summary" class="stats">
             <!-- Summary will be injected here -->
+        </div>
+
+        <div id="chart-wrapper">
+            <canvas id="priceChart"></canvas>
+        </div>
+
+        <div id="signal-legend" style="margin-bottom: 20px; display: flex; gap: 20px; justify-content: center; font-size: 0.9em; color: var(--text-color); flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="display: inline-block; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid #27ae60;"></span>
+                <b>BUY:</b> Go Long.
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #e74c3c; transform: rotate(45deg);"></span>
+                <b>SELL:</b> Exit Long.
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="display: inline-block; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 12px solid #e67e22;"></span>
+                <b>SHORT:</b> Go Short (Profit from fall).
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #9b59b6; border-radius: 50%;"></span>
+                <b>COVER:</b> Exit Short.
+            </div>
+        </div>
+
+        <div id="shorting-definitions" style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 5px; font-size: 0.85em; border-left: 4px solid #e67e22;">
+            <b>Understanding Shorting:</b>
+            <p style="margin: 5px 0;"><b>SHORT:</b> Borrowing an asset to sell it immediately, hoping to buy it back later at a lower price. This allows you to profit from price decreases.</p>
+            <p style="margin: 5px 0;"><b>COVER:</b> Buying back the borrowed asset to close the short position. Your profit is the difference between the initial sell price and the later buy price.</p>
         </div>
 
         <h2>Trading Ledger</h2>
@@ -95,338 +204,629 @@
             <table id="ledger-table">
                 <thead>
                     <tr>
-                        <th>Day</th>
+                        <th>Date</th>
                         <th>Type</th>
                         <th>Price ($)</th>
-                        <th>Amount (BTC)</th>
+                        <th>Amount</th>
                         <th>Value ($)</th>
+                        <th>Balance ($)</th>
+                        <th>Stack (Crypto)</th>
+                        <th>Reason</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Ledger rows will be injected here -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 
-        <button class="btn btn-secret" onclick="toggleGame()">Play Flappy Bird (Easter Egg)</button>
+        <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--table-border); text-align: center; font-size: 0.8em; color: #777;">
+            <p>Data provided by <a href="https://www.coingecko.com/" target="_blank" style="color: var(--accent-color);">CoinGecko</a>.
+               Built with <a href="https://js.danfo.js.org/" target="_blank" style="color: var(--accent-color);">Danfo.js</a> & <a href="https://www.chartjs.org/" target="_blank" style="color: var(--accent-color);">Chart.js</a>.</p>
+            <p>Created by <a href="https://jules.google/" target="_blank" style="color: var(--accent-color);">Google Jules</a>. | <span id="last-refreshed">Last Refreshed: Never</span></p>
+            <p><span onclick="toggleGame()" style="cursor: pointer;" title="Easter Egg">&copy;</span> 2026 Crypto Trading Strategies Simulation</p>
 
-        <div id="game-container">
-            <h2>Flappy Bird</h2>
-            <p>Press SPACE or Click to Jump. Score as many points as you can!</p>
-            <canvas id="flappyCanvas" width="400" height="500"></canvas>
-            <p id="game-status"></p>
-        </div>
+            <div id="game-container" style="margin-top: 20px;">
+                <h2 style="font-size: 1.2em;">Flappy Bird</h2>
+                <p>Press SPACE or Click to Jump.</p>
+                <canvas id="flappyCanvas" width="400" height="500"></canvas>
+            </div>
+        </footer>
     </div>
 
     <script>
-        /**
-         * Simulation Logic
-         */
-        function randn() {
-            let u = 0, v = 0;
-            while (u === 0) u = Math.random();
-            while (v === 0) v = Math.random();
-            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-        }
-
-        function generatePrices(days, initialPrice = 60000, drift = 0.0005, volatility = 0.05) {
-            const prices = [initialPrice];
-            let currentPrice = initialPrice;
-            for (let i = 1; i < days; i++) {
-                const shock = drift - 0.5 * Math.pow(volatility, 2) + volatility * randn();
-                currentPrice = currentPrice * Math.exp(shock);
-                prices.push(currentPrice);
+        async function fetchCryptoData(coinId) {
+            const cacheKey = `crypto_data_cache_${coinId}`;
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                const { timestamp, data } = JSON.parse(cached);
+                if (Date.now() - timestamp < 12 * 60 * 60 * 1000) {
+                    document.getElementById('last-refreshed').innerText = `Last Refreshed: ${new Date(timestamp).toLocaleString()}`;
+                    return data;
+                }
             }
-            return prices;
+            try {
+                // Using CoinGecko as CoinCap is having DNS issues in this environment
+                const res = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=365&interval=daily`);
+                const json = await res.json();
+                if (!json.prices) throw new Error("Invalid response from CoinGecko");
+                const prices = json.prices.map(p => ({ timestamp: p[0], price: p[1] }));
+                const now = Date.now();
+                localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, data: prices }));
+                document.getElementById('last-refreshed').innerText = `Last Refreshed: ${new Date(now).toLocaleString()}`;
+                return prices;
+            } catch (e) {
+                console.error("Fetch failed", e);
+                return null;
+            }
         }
 
-        /**
-         * Trading Strategy Logic
-         */
-        function rollingMean(values, window) {
-            const result = [];
-            for (let i = 0; i < values.length; i++) {
-                if (i < window - 1) {
-                    result.push(NaN);
+        function rollingMean(v, w) {
+            return v.map((_, i) => i < w - 1 ? NaN : v.slice(i - w + 1, i + 1).reduce((a, b) => a + b, 0) / w);
+        }
+
+        function calculateEMA(v, p) {
+            const ema = new Array(v.length).fill(NaN);
+            const k = 2 / (p + 1);
+            let s = 0, c = 0;
+            for (let i = 0; i < v.length; i++) {
+                if (!isNaN(v[i])) {
+                    if (c < p) { s += v[i]; c++; if (c === p) ema[i] = s / p; }
+                    else ema[i] = v[i] * k + ema[i - 1] * (1 - k);
+                }
+            }
+            return ema;
+        }
+
+        function calculateRSI(p, n = 14) {
+            const rsi = new Array(p.length).fill(NaN);
+            if (p.length <= n) return rsi;
+            let g = 0, l = 0;
+            for (let i = 1; i <= n; i++) {
+                const d = p[i] - p[i - 1];
+                if (d >= 0) g += d; else l -= d;
+            }
+            let ag = g / n, al = l / n;
+            rsi[n] = al === 0 ? 100 : 100 - (100 / (1 + ag / al));
+            for (let i = n + 1; i < p.length; i++) {
+                const d = p[i] - p[i - 1];
+                ag = (ag * (n - 1) + (d > 0 ? d : 0)) / n;
+                al = (al * (n - 1) + (d < 0 ? -d : 0)) / n;
+                rsi[i] = 100 - (100 / (1 + ag / al));
+            }
+            return rsi;
+        }
+
+        function calculateStoch(p, n = 14) {
+            const k = p.map((_, i) => {
+                if (i < n - 1) return NaN;
+                const s = p.slice(i - n + 1, i + 1);
+                const lo = Math.min(...s), hi = Math.max(...s);
+                return ((p[i] - lo) / (hi - lo)) * 100;
+            });
+            const sk = rollingMean(k, 3);
+            return { k: sk, d: rollingMean(sk, 3) };
+        }
+
+        function calculateWilliamsR(p, n = 14) {
+            return p.map((_, i) => {
+                if (i < n - 1) return NaN;
+                const s = p.slice(i - n + 1, i + 1);
+                const lo = Math.min(...s), hi = Math.max(...s);
+                return ((hi - p[i]) / (hi - lo)) * -100;
+            });
+        }
+
+        function calculateCCI(p, n = 20) {
+            const sma = rollingMean(p, n);
+            return p.map((v, i) => {
+                if (i < n - 1) return NaN;
+                const s = p.slice(i - n + 1, i + 1);
+                const m = s.reduce((a, b) => a + Math.abs(b - sma[i]), 0) / n;
+                return (v - sma[i]) / (0.015 * m);
+            });
+        }
+
+        function calculateSAR(p, afStep = 0.02, afMax = 0.2) {
+            const sar = new Array(p.length).fill(NaN);
+            if (p.length < 2) return sar;
+            let isBull = true, ep = p[0], af = afStep;
+            sar[0] = p[0];
+            for (let i = 1; i < p.length; i++) {
+                sar[i] = sar[i-1] + af * (ep - sar[i-1]);
+                if (isBull) {
+                    if (p[i] > ep) { ep = p[i]; af = Math.min(af + afStep, afMax); }
+                    if (p[i] < sar[i]) { isBull = false; sar[i] = ep; ep = p[i]; af = afStep; }
                 } else {
-                    let sum = 0;
-                    for (let j = 0; j < window; j++) {
-                        sum += values[i - j];
-                    }
-                    result.push(sum / window);
+                    if (p[i] < ep) { ep = p[i]; af = Math.min(af + afStep, afMax); }
+                    if (p[i] > sar[i]) { isBull = true; sar[i] = ep; ep = p[i]; af = afStep; }
                 }
             }
-            return result;
+            return sar;
         }
 
-        function getTradingSignals(prices) {
-            const df = new dfd.DataFrame({ price: prices });
-            const priceValues = df['price'].values;
-            const ma7Values = rollingMean(priceValues, 7);
-            const ma30Values = rollingMean(priceValues, 30);
+        function calculateDonchian(p, n = 20) {
+            const up = p.map((_, i) => i < n-1 ? NaN : Math.max(...p.slice(i-n+1, i+1)));
+            const lo = p.map((_, i) => i < n-1 ? NaN : Math.min(...p.slice(i-n+1, i+1)));
+            return { up, lo, mid: up.map((v, i) => (v + lo[i]) / 2) };
+        }
 
-            const signals = [];
-            for (let i = 0; i < prices.length; i++) {
-                const currentMa7 = ma7Values[i];
-                const currentMa30 = ma30Values[i];
-                let action = "HOLD";
+        function getTradingSignals(pricesData, strategy) {
+            const p = pricesData.map(d => d.price);
+            const sigs = [];
 
-                if (!isNaN(currentMa7) && !isNaN(currentMa30)) {
-                    const prevMa7 = i > 0 ? ma7Values[i - 1] : NaN;
-                    const prevMa30 = i > 0 ? ma30Values[i - 1] : NaN;
-
-                    if (!isNaN(prevMa7) && !isNaN(prevMa30)) {
-                        if (prevMa7 <= prevMa30 && currentMa7 > currentMa30) {
-                            action = "BUY";
-                        } else if (prevMa7 >= prevMa30 && currentMa7 < currentMa30) {
-                            action = "SELL";
-                        }
+            if (strategy === 'golden_cross') {
+                const m7 = rollingMean(p, 7), m30 = rollingMean(p, 30);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (m7[i] && m30[i] && m7[i-1] && m30[i-1]) {
+                        if (m7[i-1] <= m30[i-1] && m7[i] > m30[i]) { a = "BUY"; r = "Fast MA (7d) crossed above Slow MA (30d); confirming bullish trend."; }
+                        else if (m7[i-1] >= m30[i-1] && m7[i] < m30[i]) { a = "SELL"; r = "Fast MA (7d) crossed below Slow MA (30d); indicating trend reversal."; }
                     }
-                }
-
-                signals.push({
-                    date: i,
-                    price: prices[i],
-                    ma7: currentMa7,
-                    ma30: currentMa30,
-                    action
+                    sigs.push({ date: pricesData[i].timestamp, price: v, ma7: m7[i], ma30: m30[i], action: a, reason: r });
+                });
+            } else if (strategy === 'ema_cross') {
+                const e12 = calculateEMA(p, 12), e26 = calculateEMA(p, 26);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (e12[i] && e26[i] && e12[i-1] && e26[i-1]) {
+                        if (e12[i-1] <= e26[i-1] && e12[i] > e26[i]) { a = "BUY"; r = "EMA 12 crossed above EMA 26; entering on momentum shift."; }
+                        else if (e12[i-1] >= e26[i-1] && e12[i] < e26[i]) { a = "SELL"; r = "EMA 12 crossed below EMA 26; exiting as momentum fades."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, ema12: e12[i], ema26: e26[i], action: a, reason: r });
+                });
+            } else if (strategy === 'sma_cross') {
+                const s50 = rollingMean(p, 50), s200 = rollingMean(p, 200);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (s50[i] && s200[i] && s50[i-1] && s200[i-1]) {
+                        if (s50[i-1] <= s200[i-1] && s50[i] > s200[i]) { a = "BUY"; r = "SMA 50 crossed above SMA 200; major 'Golden Cross' detected."; }
+                        else if (s50[i-1] >= s200[i-1] && s50[i] < s200[i]) { a = "SELL"; r = "SMA 50 crossed below SMA 200; major 'Death Cross' detected."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, sma50: s50[i], sma200: s200[i], action: a, reason: r });
+                });
+            } else if (strategy === 'rsi') {
+                const rsi = calculateRSI(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (rsi[i] && rsi[i-1]) {
+                        if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "BUY"; r = "RSI recovered from oversold (<30); buying the dip."; }
+                        else if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SELL"; r = "RSI dropped from overbought (>70); profit taking."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, rsi: rsi[i], action: a, reason: r });
+                });
+            } else if (strategy === 'macd') {
+                const e12 = calculateEMA(p, 12), e26 = calculateEMA(p, 26);
+                const macd = e12.map((e, idx) => e - e26[idx]);
+                const signal = calculateEMA(macd, 9);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (macd[i] && signal[i] && macd[i-1] && signal[i-1]) {
+                        if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "BUY"; r = "MACD bullish crossover above signal line."; }
+                        else if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SELL"; r = "MACD bearish crossover below signal line."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, macd: macd[i], signal: signal[i], action: a, reason: r });
+                });
+            } else if (strategy === 'stochastic') {
+                const { k, d } = calculateStoch(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (k[i] && d[i] && k[i-1] && d[i-1]) {
+                        if (k[i-1] <= d[i-1] && k[i] > d[i] && k[i] < 20) { a = "BUY"; r = "Stochastic Bullish crossover in oversold region."; }
+                        else if (k[i-1] >= d[i-1] && k[i] < d[i] && k[i] > 80) { a = "SELL"; r = "Stochastic Bearish crossover in overbought region."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, stochK: k[i], stochD: d[i], action: a, reason: r });
+                });
+            } else if (strategy === 'williams_r') {
+                const wr = calculateWilliamsR(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (wr[i] && wr[i-1]) {
+                        if (wr[i-1] <= -80 && wr[i] > -80) { a = "BUY"; r = "Williams %R recovered from extreme oversold."; }
+                        else if (wr[i-1] >= -20 && wr[i] < -20) { a = "SELL"; r = "Williams %R dropped from extreme overbought."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, williamsR: wr[i], action: a, reason: r });
+                });
+            } else if (strategy === 'bollinger') {
+                const ma = rollingMean(p, 20);
+                const sd = p.map((_, i) => i < 19 ? NaN : Math.sqrt(p.slice(i-19, i+1).reduce((a, b) => a + (b-ma[i])**2, 0)/20));
+                const up = ma.map((m, i) => m + 2*sd[i]), lo = ma.map((m, i) => m - 2*sd[i]);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (up[i] && lo[i]) {
+                        if (p[i] < lo[i]) { a = "BUY"; r = "Price broke below Lower Bollinger Band; expecting bounce."; }
+                        else if (p[i] > up[i]) { a = "SELL"; r = "Price broke above Upper Bollinger Band; expecting reversal."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, upper: up[i], lower: lo[i], action: a, reason: r });
+                });
+            } else if (strategy === 'mean_reversion') {
+                const ma = rollingMean(p, 20);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (ma[i]) {
+                        if (v < ma[i] * 0.95) { a = "BUY"; r = "Price is 5% below 20-day mean; buying for reversion."; }
+                        else if (v > ma[i] * 1.05) { a = "SELL"; r = "Price is 5% above 20-day mean; selling for reversion."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, ma20: ma[i], action: a, reason: r });
+                });
+            } else if (strategy === 'cci') {
+                const cci = calculateCCI(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (cci[i] && cci[i-1]) {
+                        if (cci[i-1] <= -100 && cci[i] > -100) { a = "BUY"; r = "CCI recovered from oversold territory."; }
+                        else if (cci[i-1] >= 100 && cci[i] < 100) { a = "SELL"; r = "CCI dropped from overbought territory."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, cci: cci[i], action: a, reason: r });
+                });
+            } else if (strategy === 'short_rsi') {
+                const rsi = calculateRSI(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (rsi[i] && rsi[i-1]) {
+                        if (rsi[i-1] >= 70 && rsi[i] < 70) { a = "SHORT"; r = "RSI dropped from overbought (>70); entering short position."; }
+                        else if (rsi[i-1] <= 30 && rsi[i] > 30) { a = "COVER"; r = "RSI recovered from oversold (<30); covering short position."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, rsi: rsi[i], action: a, reason: r });
+                });
+            } else if (strategy === 'short_macd') {
+                const e12 = calculateEMA(p, 12), e26 = calculateEMA(p, 26);
+                const macd = e12.map((e, idx) => e - e26[idx]);
+                const signal = calculateEMA(macd, 9);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (macd[i] && signal[i] && macd[i-1] && signal[i-1]) {
+                        if (macd[i-1] >= signal[i-1] && macd[i] < signal[i]) { a = "SHORT"; r = "MACD bearish crossover; entering short as trend weakens."; }
+                        else if (macd[i-1] <= signal[i-1] && macd[i] > signal[i]) { a = "COVER"; r = "MACD bullish crossover; covering short as trend strengthens."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, macd: macd[i], signal: signal[i], action: a, reason: r });
+                });
+            } else if (strategy === 'psar') {
+                const sar = calculateSAR(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (sar[i] && sar[i-1]) {
+                        if (p[i-1] <= sar[i-1] && p[i] > sar[i]) { a = "BUY"; r = "Price crossed above Parabolic SAR; trend is now bullish."; }
+                        else if (p[i-1] >= sar[i-1] && p[i] < sar[i]) { a = "SELL"; r = "Price crossed below Parabolic SAR; trend is now bearish."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, sar: sar[i], action: a, reason: r });
+                });
+            } else if (strategy === 'donchian') {
+                const { up, lo } = calculateDonchian(p);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (up[i] && lo[i]) {
+                        if (v >= up[i-1]) { a = "BUY"; r = "Price broke above 20-day high; entering on momentum."; }
+                        else if (v <= lo[i-1]) { a = "SELL"; r = "Price broke below 20-day low; exiting breakout."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, up: up[i], lo: lo[i], action: a, reason: r });
+                });
+            } else if (strategy === 'short_bollinger') {
+                const ma = rollingMean(p, 20);
+                const sd = p.map((_, i) => i < 19 ? NaN : Math.sqrt(p.slice(i-19, i+1).reduce((a, b) => a + (b-ma[i])**2, 0)/20));
+                const up = ma.map((m, i) => m + 2*sd[i]), lo = ma.map((m, i) => m - 2*sd[i]);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (up[i] && lo[i]) {
+                        if (p[i] > up[i]) { a = "SHORT"; r = "Price hit Upper Bollinger Band; shorting for reversal."; }
+                        else if (p[i] < ma[i]) { a = "COVER"; r = "Price returned to mean (MA 20); covering short position."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, upper: up[i], lower: lo[i], action: a, reason: r });
+                });
+            } else if (strategy === 'short_mean_reversion') {
+                const ma = rollingMean(p, 20);
+                p.forEach((v, i) => {
+                    let a = "HOLD", r = "";
+                    if (ma[i]) {
+                        if (v > ma[i] * 1.10) { a = "SHORT"; r = "Price is 10% above 20-day mean; shorting for reversion."; }
+                        else if (v < ma[i]) { a = "COVER"; r = "Price returned to mean; covering short."; }
+                    }
+                    sigs.push({ date: pricesData[i].timestamp, price: v, ma20: ma[i], action: a, reason: r });
                 });
             }
-            return signals;
+            return sigs;
         }
 
-        /**
-         * Portfolio Management
-         */
         class Portfolio {
-            constructor(initialBalance = 100000) {
-                this.cash = initialBalance;
-                this.initialBalance = initialBalance;
-                this.btc = 0;
+            constructor(balance, mode, startPrice) {
+                if (mode === 'ACCUMULATE') {
+                    this.asset = balance;
+                    this.cash = 0;
+                    this.initVal = balance * startPrice;
+                } else {
+                    this.cash = balance;
+                    this.asset = 0;
+                    this.initVal = balance;
+                }
                 this.ledger = [];
             }
-
-            executeTrade(signal) {
-                if (signal.action === "BUY" && this.cash > 0) {
-                    const amountToBuy = this.cash / signal.price;
-                    const tradeValue = this.cash;
-                    this.ledger.push({
-                        day: signal.date,
-                        type: "BUY",
-                        price: signal.price,
-                        amount: amountToBuy,
-                        value: tradeValue
-                    });
-                    this.btc += amountToBuy;
-                    this.cash = 0;
-                } else if (signal.action === "SELL" && this.btc > 0) {
-                    const tradeValue = this.btc * signal.price;
-                    this.ledger.push({
-                        day: signal.date,
-                        type: "SELL",
-                        price: signal.price,
-                        amount: this.btc,
-                        value: tradeValue
-                    });
-                    this.cash += tradeValue;
-                    this.btc = 0;
+            trade(s) {
+                if (s.action === "BUY" && this.cash > 0) {
+                    const amt = this.cash / s.price;
+                    this.asset += amt; this.cash = 0;
+                    this.ledger.push({ ...s, amount: amt, value: amt * s.price, postCash: this.cash, postAsset: this.asset });
+                } else if (s.action === "SELL" && this.asset > 0) {
+                    const v = this.asset * s.price;
+                    this.cash += v;
+                    this.ledger.push({ ...s, amount: this.asset, value: v, postCash: this.cash, postAsset: 0 });
+                    this.asset = 0;
+                } else if (s.action === "SHORT" && this.cash > 0) {
+                    if (this.asset > 0) this.trade({ ...s, action: "SELL", reason: "Auto-exit Long" });
+                    const amt = this.cash / s.price;
+                    this.cash *= 2; this.asset -= amt;
+                    this.ledger.push({ ...s, amount: amt, value: amt * s.price, postCash: this.cash, postAsset: this.asset });
+                } else if (s.action === "COVER" && this.asset < 0) {
+                    const amt = Math.abs(this.asset), cost = amt * s.price;
+                    this.cash -= cost; this.asset = 0;
+                    this.ledger.push({ ...s, amount: amt, value: cost, postCash: this.cash, postAsset: 0 });
                 }
             }
+            getValue(p) { return this.cash + this.asset * p; }
+        }
 
-            getPortfolioValue(currentPrice) {
-                return this.cash + this.btc * currentPrice;
+        let chart = null, currentSim = [];
+        async function run(forceGraphRedraw = true) {
+            const strat = document.getElementById('strategy-select').value;
+            const strats = {
+                golden_cross: '<b>Golden Cross:</b> Uses 7/30 MAs. Best for long-term trends. <b>On the graph:</b> Look for the 7-day MA (orange) crossing above the 30-day MA (purple) for a BUY signal.',
+                ema_cross: '<b>EMA Cross:</b> 12/26 EMA. Faster response than SMA. <b>On the graph:</b> Watch for the 12-day EMA (orange) to cross the 26-day EMA (purple) to signal momentum shifts.',
+                sma_cross: '<b>SMA Cross:</b> 50/200 SMA. The industry standard for macro trends. <b>On the graph:</b> The 50-day SMA (orange) crossing the 200-day SMA (purple) marks major trend changes.',
+                rsi: '<b>RSI:</b> Relative Strength Index. Identifies over-extended markets. <b>On the graph:</b> The RSI (red) appears on the right axis. Values below 30 signal oversold (BUY), above 70 signal overbought (SELL).',
+                macd: '<b>MACD:</b> Trend momentum. <b>On the graph:</b> Look for the MACD line (green) crossing above the signal line (red) for a bullish entry.',
+                stochastic: '<b>Stochastic Oscillator:</b> Great for sideways markets. <b>On the graph:</b> Look for the %K line crossing the %D line in the extreme low (<20) or high (>80) zones.',
+                williams_r: '<b>Williams %R:</b> Sensitive oscillator for exhaustion points. <b>On the graph:</b> Watch for the line bouncing back from the -80 or -20 extremes to signal reversals.',
+                bollinger: '<b>Bollinger Bands:</b> Measures volatility. <b>On the graph:</b> BUY when price touches the lower band; SELL when it touches the upper band or returns to the mean.',
+                mean_reversion: '<b>Mean Reversion:</b> Markets usually return to the average. <b>On the graph:</b> BUY when the price is significantly below the 20-day MA (orange).',
+                cci: '<b>CCI:</b> Identifies new trends and extreme conditions. <b>On the graph:</b> Watch for the CCI line to break out of the -100 to 100 range.',
+                short_rsi: '<b>Inverse RSI Short:</b> Profits from "bubbles". <b>On the graph:</b> SHORT when RSI (red) drops from above 70; COVER when it recovers from below 30.',
+                short_macd: '<b>MACD Bearish Short:</b> Catches momentum death. <b>On the graph:</b> SHORT when the MACD line (green) crosses below the signal line (red).',
+                psar: '<b>Parabolic SAR:</b> Stop and Reverse. <b>On the graph:</b> Follow the dots (red). BUY when dots flip below price; SELL when dots flip above price.',
+                donchian: '<b>Donchian Channels:</b> Volatility breakout. <b>On the graph:</b> BUY when price breaks the upper channel (orange); SELL when it hits the lower channel (orange).',
+                short_bollinger: '<b>Short Bollinger Band:</b> Mean reversion for overbought assets. <b>On the graph:</b> SHORT when price hits the upper band; COVER at the 20-day MA (orange).',
+                short_mean_reversion: '<b>Short Mean Reversion:</b> Profits from "parabolic" moves. <b>On the graph:</b> SHORT when the price is >10% above the 20-day MA (orange).'
+            };
+            document.getElementById('strategy-info').innerHTML = strats[strat] || '';
+
+            const coin = document.getElementById('crypto-select').value;
+            const selectedOption = document.getElementById('crypto-select').options[document.getElementById('crypto-select').selectedIndex];
+            const coinName = selectedOption.text.includes('(') ? selectedOption.text.split('(')[1].replace(')', '') : selectedOption.text;
+            const mode = document.getElementById('mode-select').value;
+            const days = +document.getElementById('period-input').value;
+            const bal = +document.getElementById('balance-input').value;
+            const shortingEnabled = document.getElementById('shorting-toggle').checked;
+            const shortingToggleLabel = document.querySelector('label[for="shorting-toggle"]');
+
+            document.getElementById('balance-label').innerText = mode === 'ACCUMULATE' ? `Initial Balance (${coinName}):` : "Initial Balance ($):";
+            shortingToggleLabel.innerText = strat.startsWith('short_') ? "Invert to Long (Buy/Sell)" : "Enable Shorting (Invert Signals)";
+
+            if (forceGraphRedraw) {
+                const data = await fetchCryptoData(coin);
+                if (!data) return;
+                currentSim = getTradingSignals(data.slice(-days - 200), strat).slice(-days);
             }
-        }
 
-        /**
-         * Main Execution and UI Updates
-         */
-        function runSimulation() {
-            const days = 60;
-            const prices = generatePrices(days);
-            const signals = getTradingSignals(prices);
-            const portfolio = new Portfolio(100000);
-
-            signals.forEach(s => portfolio.executeTrade(s));
-
-            updateUI(portfolio, prices[days - 1], signals);
-        }
-
-        function updateUI(portfolio, finalPrice, signals) {
-            const summaryDiv = document.getElementById('performance-summary');
-            const finalValue = portfolio.getPortfolioValue(finalPrice);
-            const profit = finalValue - portfolio.initialBalance;
-            const returnPct = (profit / portfolio.initialBalance) * 100;
-
-            summaryDiv.innerHTML = `
-                <div class="stat-card">
-                    <h3>Initial Balance</h3>
-                    <p>$${portfolio.initialBalance.toLocaleString()}</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Final Value</h3>
-                    <p>$${finalValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Profit / Loss</h3>
-                    <p style="color: ${profit >= 0 ? '#27ae60' : '#e74c3c'}">
-                        $${profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} 
-                        (${returnPct.toFixed(2)}%)
-                    </p>
-                </div>
-            `;
-
-            const tbody = document.querySelector('#ledger-table tbody');
-            tbody.innerHTML = '';
-            if (portfolio.ledger.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No trades executed.</td></tr>';
-            } else {
-                portfolio.ledger.forEach(trade => {
-                    const row = `
-                        <tr>
-                            <td>${trade.day}</td>
-                            <td><b style="color: ${trade.type === 'BUY' ? '#27ae60' : '#e74c3c'}">${trade.type}</b></td>
-                            <td>$${trade.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                            <td>${trade.amount.toFixed(4)}</td>
-                            <td>$${trade.value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
+            let simToRun = currentSim.map(s => ({...s}));
+            if (shortingEnabled) {
+                simToRun.forEach(s => {
+                    if (s.action === "BUY") { s.action = "COVER"; s.reason = s.reason.replace("BUY", "COVER"); }
+                    else if (s.action === "SELL") { s.action = "SHORT"; s.reason = s.reason.replace("SELL", "SHORT"); }
+                    else if (s.action === "SHORT") { s.action = "SELL"; s.reason = s.reason.replace("SHORT", "SELL"); }
+                    else if (s.action === "COVER") { s.action = "BUY"; s.reason = s.reason.replace("COVER", "BUY"); }
                 });
             }
-        }
 
-        /**
-         * Flappy Bird Easter Egg
-         */
-        let gameRunning = false;
-        const canvas = document.getElementById('flappyCanvas');
-        const ctx = canvas.getContext('2d');
-        const statusText = document.getElementById('game-status');
+            if (!simToRun.length) return;
+            const port = new Portfolio(bal, mode, simToRun[0].price);
+            simToRun.forEach(s => port.trade(s));
 
-        let bird = { x: 50, y: 150, width: 20, height: 20, gravity: 0.6, lift: -10, velocity: 0 };
-        let pipes = [];
-        let frame = 0;
-        let score = 0;
+            const finalPrice = simToRun[simToRun.length - 1].price;
+            const finalVal = port.getValue(finalPrice);
+            const profit = finalVal - port.initVal;
+            const isAccumulate = mode === 'ACCUMULATE';
 
-        function toggleGame() {
-            const container = document.getElementById('game-container');
-            if (container.style.display === 'block') {
-                container.style.display = 'none';
-                gameRunning = false;
-            } else {
-                container.style.display = 'block';
-                resetGame();
-                gameRunning = true;
-                requestAnimationFrame(gameLoop);
-            }
-        }
+            document.getElementById('mode-indicator').innerText = `Active Mode: ${isAccumulate ? 'Stacking Assets (Starting with Crypto)' : 'Maximizing USD Profit (Starting with Cash)'}`;
 
-        function resetGame() {
-            bird.y = 150;
-            bird.velocity = 0;
-            pipes = [];
-            score = 0;
-            frame = 0;
-            statusText.innerText = "";
-        }
+            document.getElementById('performance-summary').innerHTML = `
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Initial Value</h3><p>$${port.initVal.toLocaleString()}<br><small>(${(port.initVal/simToRun[0].price).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Final Portfolio</h3><p>$${finalVal.toLocaleString()}<br><small>(${(finalVal/finalPrice).toFixed(4)} ${coinName})</small></p></div>
+                <div class="stat-card" style="border-top: 4px solid ${isAccumulate ? '#3498db' : '#27ae60'};"><h3>Profit/Loss</h3><p style="color:${profit>=0?'#27ae60':'#e74c3c'}">$${profit.toLocaleString()} (${((profit/port.initVal)*100).toFixed(2)}%)<br><small>(${(profit/finalPrice).toFixed(4)} ${coinName})</small></p></div>
+            `;
+            document.querySelector('#ledger-table tbody').innerHTML = port.ledger.map(t => `
+                <tr>
+                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                    <td><b>${t.action}</b></td>
+                    <td>$${t.price.toLocaleString()}</td>
+                    <td>${t.amount.toFixed(4)}</td>
+                    <td>$${t.value.toLocaleString()}</td>
+                    <td>$${t.postCash.toLocaleString()}</td>
+                    <td>${t.postAsset.toFixed(4)}</td>
+                    <td>${t.reason}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="8">No trades.</td></tr>';
 
-        function gameLoop() {
-            if (!gameRunning) return;
+            if (!forceGraphRedraw) return;
 
-            update();
-            draw();
-            frame++;
-            requestAnimationFrame(gameLoop);
-        }
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
 
-        function update() {
-            bird.velocity += bird.gravity;
-            bird.y += bird.velocity;
-
-            if (bird.y + bird.height > canvas.height || bird.y < 0) {
-                gameOver();
-            }
-
-            if (frame % 100 === 0) {
-                const gap = 120;
-                const topHeight = Math.floor(Math.random() * (canvas.height - gap - 100)) + 50;
-                pipes.push({ x: canvas.width, top: topHeight, bottom: topHeight + gap });
-            }
-
-            for (let i = pipes.length - 1; i >= 0; i--) {
-                const pipe = pipes[i];
-                pipe.x -= 3;
-
-                // Collision
-                if (bird.x + bird.width > pipe.x && bird.x < pipe.x + 50) {
-                    if (bird.y < pipe.top || bird.y + bird.height > pipe.bottom) {
-                        gameOver();
-                    }
-                }
-
-                // Scoring: check if bird just passed the pipe
-                if (!pipe.passed && bird.x > pipe.x + 50) {
-                    score++;
-                    pipe.passed = true;
-                }
-
-                if (pipe.x + 50 < 0) {
-                    pipes.splice(i, 1);
-                }
-            }
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Bird
-            ctx.fillStyle = '#f1c40f';
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-
-            // Pipes
-            ctx.fillStyle = '#2ecc71';
-            pipes.forEach(pipe => {
-                ctx.fillRect(pipe.x, 0, 50, pipe.top);
-                ctx.fillRect(pipe.x, pipe.bottom, 50, canvas.height - pipe.bottom);
+            const getMarkerData = (action) => simToRun.map(s => {
+                const trade = port.ledger.find(t => t.date === s.date && t.action === action);
+                return trade ? s.price : null;
             });
 
-            // Score
-            ctx.fillStyle = '#fff';
-            ctx.font = '24px Arial';
-            ctx.fillText(`Score: ${score}`, 10, 30);
-        }
+            const datasets = [
+                { label: 'Price', data: simToRun.map(s => s.price), borderColor: isDark ? '#5dade2' : '#3498db', pointRadius: 0, fill: true, backgroundColor: 'rgba(52, 152, 219, 0.1)', order: 2, yAxisID: 'y' },
+                { label: 'BUY', data: getMarkerData('BUY'), pointStyle: 'triangle', pointRadius: 8, showLine: false, backgroundColor: '#27ae60', order: 1, yAxisID: 'y' },
+                { label: 'SELL', data: getMarkerData('SELL'), pointStyle: 'rectRot', pointRadius: 8, showLine: false, backgroundColor: '#e74c3c', order: 1, yAxisID: 'y' },
+                { label: 'SHORT', data: getMarkerData('SHORT'), pointStyle: 'triangle', rotation: 180, pointRadius: 8, showLine: false, backgroundColor: '#e67e22', order: 1, yAxisID: 'y' },
+                { label: 'COVER', data: getMarkerData('COVER'), pointStyle: 'circle', pointRadius: 8, showLine: false, backgroundColor: '#9b59b6', order: 1, yAxisID: 'y' }
+            ];
 
-        function gameOver() {
-            gameRunning = false;
-            statusText.innerText = "Game Over! Click to Restart.";
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                if (!gameRunning && document.getElementById('game-container').style.display === 'block') {
-                    resetGame();
-                    gameRunning = true;
-                    gameLoop();
-                } else {
-                    bird.velocity = bird.lift;
+            const addIndicator = (label, dataKey, color, dashed = true, yAxis = 'y') => {
+                const data = simToRun.map(s => s[dataKey]);
+                if (data.some(v => !isNaN(v) && v !== null)) {
+                    datasets.push({
+                        label, data, borderColor: color, pointRadius: 0, borderWidth: 2,
+                        borderDash: dashed ? [5, 5] : [], fill: false, order: 3, yAxisID: yAxis
+                    });
                 }
-                e.preventDefault();
-            }
-        });
+            };
 
-        canvas.addEventListener('mousedown', () => {
-            if (!gameRunning && document.getElementById('game-container').style.display === 'block') {
-                resetGame();
-                gameRunning = true;
-                gameLoop();
+            if (strat === 'golden_cross') { addIndicator('7-Day MA', 'ma7', '#f39c12'); addIndicator('30-Day MA', 'ma30', '#9b59b6'); }
+            else if (strat === 'ema_cross') { addIndicator('12-Day EMA', 'ema12', '#f39c12'); addIndicator('26-Day EMA', 'ema26', '#9b59b6'); }
+            else if (strat === 'sma_cross') { addIndicator('50-Day SMA', 'sma50', '#f39c12'); addIndicator('200-Day SMA', 'sma200', '#9b59b6'); }
+            else if (strat === 'bollinger' || strat === 'short_bollinger') { addIndicator('Upper Band', 'upper', '#e67e22'); addIndicator('Lower Band', 'lower', '#e67e22'); }
+            else if (strat === 'mean_reversion' || strat === 'short_mean_reversion') { addIndicator('20-Day MA', 'ma20', '#f39c12'); }
+            else if (strat === 'rsi' || strat === 'short_rsi') { addIndicator('RSI', 'rsi', '#e74c3c', false, 'y1'); }
+            else if (strat === 'macd' || strat === 'short_macd') { addIndicator('MACD', 'macd', '#2ecc71', false, 'y1'); addIndicator('Signal', 'signal', '#e74c3c', true, 'y1'); }
+            else if (strat === 'stochastic') { addIndicator('%K', 'stochK', '#2ecc71', false, 'y1'); addIndicator('%D', 'stochD', '#e74c3c', true, 'y1'); }
+            else if (strat === 'williams_r') { addIndicator('Williams %R', 'williamsR', '#e74c3c', false, 'y1'); }
+            else if (strat === 'cci') { addIndicator('CCI', 'cci', '#2ecc71', false, 'y1'); }
+            else if (strat === 'psar') { addIndicator('SAR', 'sar', '#e74c3c', false); }
+            else if (strat === 'donchian') { addIndicator('High (20d)', 'up', '#e67e22'); addIndicator('Low (20d)', 'lo', '#e67e22'); }
+
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('priceChart'), {
+                type: 'line',
+                data: {
+                    labels: simToRun.map(s => new Date(s.date).toLocaleDateString()),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: isDark ? '#f4f4f4' : '#333' } },
+                        y: {
+                            type: 'linear', display: true, position: 'left',
+                            ticks: { color: isDark ? '#f4f4f4' : '#333' },
+                            title: { display: true, text: 'Price ($)', color: isDark ? '#f4f4f4' : '#333' }
+                        },
+                        y1: {
+                            type: 'linear', display: (strat.includes('rsi') || strat.includes('macd') || ['stochastic', 'williams_r', 'cci'].includes(strat)), position: 'right',
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: isDark ? '#f4f4f4' : '#333' },
+                            title: { display: true, text: 'Indicator', color: isDark ? '#f4f4f4' : '#333' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: isDark ? '#f4f4f4' : '#333' } }
+                    }
+                }
+            });
+
+        }
+
+        ['crypto-select', 'strategy-select', 'mode-select', 'period-input', 'shorting-toggle'].forEach(i => document.getElementById(i).addEventListener('change', () => run(true)));
+        document.getElementById('balance-input').addEventListener('input', () => run(true));
+
+        let gameRunning = false, gameActive = false;
+        const cvs = document.getElementById('flappyCanvas'), c = cvs.getContext('2d');
+        let bird = { x: 50, y: 150, w: 20, h: 20, g: 0.015, v: 0, jump: -1.2 };
+        let pipes = [], powerups = [], frame = 0, score = 0;
+        let activeEffects = { snail: 0, ghost: 0, growth: 0, mini: 0 };
+        function toggleGame() {
+            const container = document.getElementById('game-container');
+            if (container.style.display === 'block') { container.style.display = 'none'; gameActive = false; }
+            else { container.style.display = 'block'; gameActive = true; reset(); loop(); }
+        }
+        function reset() { bird.y = 150; bird.v = 0; bird.w = 20; bird.h = 20; pipes = []; powerups = []; score = 0; frame = 0; gameRunning = false; activeEffects = { snail: 0, ghost: 0, growth: 0, mini: 0 }; }
+        function loop() { if (!gameActive) return; update(); draw(); if (gameRunning) frame++; requestAnimationFrame(loop); }
+        function update() {
+            if (!gameRunning) return;
+            bird.v += bird.g; bird.y += bird.v;
+
+            // Apply Mini effect
+            if (activeEffects.mini > 0) { bird.w = 10; bird.h = 10; activeEffects.mini--; } else { bird.w = 20; bird.h = 20; }
+            if (activeEffects.snail > 0) activeEffects.snail--;
+            if (activeEffects.ghost > 0) activeEffects.ghost--;
+            if (activeEffects.growth > 0) activeEffects.growth--;
+
+            if (bird.y + bird.h > cvs.height || bird.y < 0) { gameRunning = false; return; }
+
+            if (frame % 360 === 0) {
+                const g = activeEffects.growth > 0 ? 300 : 200, t = Math.random() * (cvs.height - g - 100) + 50;
+                pipes.push({ x: cvs.width, t, b: t + g });
+                if (Math.random() > 0.4) {
+                    const types = ['snail', 'ghost', 'growth', 'mini'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    const py = Math.random() > 0.5 ? t + 20 : t + g - 20;
+                    powerups.push({ x: cvs.width + 25, y: py, r: 10, type, collected: false });
+                }
+            }
+            const pipeSpeed = activeEffects.snail > 0 ? 0.15 : 0.3;
+            pipes.forEach((p, i) => {
+                p.x -= pipeSpeed;
+                if (activeEffects.ghost <= 0 && bird.x + bird.w > p.x && bird.x < p.x + 50 && (bird.y < p.t || bird.y + bird.h > p.b)) gameRunning = false;
+                if (!p.passed && bird.x > p.x + 50) { score++; p.passed = true; }
+                if (p.x + 50 < 0) pipes.splice(i, 1);
+            });
+            powerups.forEach((p, i) => {
+                p.x -= pipeSpeed;
+                if (!p.collected && Math.hypot(bird.x + bird.w/2 - p.x, bird.y + bird.h/2 - p.y) < p.r + 10) {
+                    p.collected = true;
+                    score += 5;
+                    activeEffects[p.type] = 1500; // ~25-30 seconds at 60fps
+                }
+                if (p.x + p.r < 0) powerups.splice(i, 1);
+            });
+        }
+        function draw() {
+            c.clearRect(0,0,cvs.width,cvs.height);
+            // Draw Bird
+            c.fillStyle = activeEffects.ghost > 0 ? 'rgba(241, 196, 15, 0.5)' : '#f1c40f';
+            c.fillRect(bird.x, bird.y, bird.w, bird.h);
+
+            // Draw Pipes
+            c.fillStyle = '#2ecc71'; pipes.forEach(p => { c.fillRect(p.x, 0, 50, p.t); c.fillRect(p.x, p.b, 50, cvs.height - p.b); });
+
+            // Draw Powerups
+            powerups.forEach(p => {
+                if (!p.collected) {
+                    c.fillStyle = p.type === 'snail' ? '#27ae60' : p.type === 'ghost' ? '#e74c3c' : p.type === 'growth' ? '#3498db' : '#f1c40f';
+                    c.beginPath(); c.arc(p.x, p.y, p.r, 0, Math.PI*2); c.fill();
+                    c.fillStyle = '#fff'; c.font = '10px Arial'; c.textAlign = 'center';
+                    c.fillText(p.type[0].toUpperCase(), p.x, p.y + 4);
+                }
+            });
+
+            // Draw Score & Effects
+            c.fillStyle = '#fff'; c.font = '20px Arial'; c.textAlign = 'left';
+            c.fillText(`Score: ${score}`, 10, 30);
+
+            let effectY = 60;
+            c.font = '12px Arial';
+            if (activeEffects.snail > 0) { c.fillStyle = '#2ecc71'; c.fillText(`Snail (Slow): ${(activeEffects.snail/60).toFixed(1)}s`, 10, effectY); effectY += 20; }
+            if (activeEffects.ghost > 0) { c.fillStyle = '#e74c3c'; c.fillText(`Ghost (Invincible): ${(activeEffects.ghost/60).toFixed(1)}s`, 10, effectY); effectY += 20; }
+            if (activeEffects.growth > 0) { c.fillStyle = '#3498db'; c.fillText(`Growth (Wide Gap): ${(activeEffects.growth/60).toFixed(1)}s`, 10, effectY); effectY += 20; }
+            if (activeEffects.mini > 0) { c.fillStyle = '#f1c40f'; c.fillText(`Mini (Small Bird): ${(activeEffects.mini/60).toFixed(1)}s`, 10, effectY); effectY += 20; }
+
+            if (!gameRunning) {
+                c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0,0,cvs.width,cvs.height);
+                c.fillStyle = '#fff'; c.textAlign = 'center';
+                c.fillText(frame === 0 ? 'CLICK TO START' : 'GAME OVER - CLICK TO RESTART', cvs.width/2, cvs.height/2);
+            }
+            c.textAlign = 'left';
+        }
+        cvs.addEventListener('mousedown', () => { if (!gameRunning) { reset(); gameRunning = true; loop(); } else bird.v = bird.jump; });
+        window.addEventListener('keydown', e => { if (e.code === 'Space') { if (!gameRunning) { reset(); gameRunning = true; loop(); } else bird.v = bird.jump; e.preventDefault(); } });
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const icon = document.getElementById('theme-icon');
+            if (isDark) {
+                icon.innerHTML = '<path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>';
             } else {
-                bird.velocity = bird.lift;
+                icon.innerHTML = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 00-1.41 0 .996.996 0 000 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 000-1.41.996.996 0 00-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
             }
-        });
+        }
 
-        // Initialize simulation on load
-        window.onload = runSimulation;
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon();
+            run();
+        });
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+        updateThemeIcon();
+        run();
     </script>
 </body>
 </html>
